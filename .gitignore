@@ -41,6 +41,9 @@ publish_output/
 
 TestResults/
 
+**/appsettings.Development.json
+**/appsettings.Local.json
+
 #####################################################
 # Rider
 #####################################################
