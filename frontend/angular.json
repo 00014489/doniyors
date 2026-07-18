@@ -67,6 +67,9 @@
               "buildTarget": "frontend:build:development"
             }
           },
+          "options": {
+            "allowedHosts": ["pathwayed-chere-soppily.ngrok-free.dev"]
+          },
           "defaultConfiguration": "development"
         },
         "test": {

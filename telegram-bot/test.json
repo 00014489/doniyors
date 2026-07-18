@@ -1,0 +1,21 @@
+{
+  "ru": {
+    "full_name": "Русский",
+    "choose_language": "Пожалуйста, выберите язык",
+    "welcome": "Добро пожаловать в нашего бота",
+    "error": "Произошла ошибка при создании"
+  },
+  "uz": {
+    "full_name": "O'zbek",
+    "choose_language": "Iltimos, tilni tanlang",
+    "welcome": "Botimizga xush kelibsiz",
+    "error": "Hisob yaratishda xatolik yuz berdi"
+  },
+  "en": {
+    "full_name": "🇬🇧 English",
+    "choose_language": "Please choose language",
+    "welcome": "Welcome to our bot",
+    "another_lang": "Please select a language from the keyboard.",
+    "error": "Something happened while creating your account. Please retry"
+  }
+}

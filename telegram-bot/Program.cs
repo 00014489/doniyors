@@ -1,8 +1,58 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Telegram.Bot;
+using telegram_bot.DAL;
+using telegram_bot.DAL.Repositories.Sessions;
+using telegram_bot.DAL.Repositories.Users;
+using telegram_bot.Handlers;
+using telegram_bot.Keyboards;
+using telegram_bot.Midleware;
+using telegram_bot.Models;
+using telegram_bot.Services;
+using telegram_bot.Services.Localization;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
+builder.Services.Configure<BotSettings>(
+    builder.Configuration.GetSection("BotSettings"));
+
+// Localization
+builder.Services.AddSingleton<ILocalizationService, LocalizationService>();
+
+
+// Telegram client
+builder.Services.AddSingleton<ITelegramBotClient>(sp =>
+{
+    var settings = sp.GetRequiredService<IOptions<BotSettings>>().Value;
+    return new TelegramBotClient(settings.TELEGRAM_BOT_TOKEN);
+});
+
+builder.Services.AddDbContext<BotDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddScoped<ISessionRepo, SessionRepo>();
+
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<SessionService>();
+
+
+builder.Services.AddScoped<UpdateHandler>();
+builder.Services.AddScoped<MessageHandler>();
+builder.Services.AddScoped<CommandHandler>();
+builder.Services.AddScoped<CallbackQueryHandler>();
+
+builder.Services.AddScoped<ReplyKeyboards>();
+builder.Services.AddScoped<InlineKeyboards>();
+
+
+
+builder.Services.AddControllers();
+
 
 var app = builder.Build();
 
@@ -12,30 +62,22 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
 
-var summaries = new[]
+using (var scope = app.Services.CreateScope())
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+    var settings = scope.ServiceProvider.GetRequiredService<IOptions<BotSettings>>().Value;
+    var botClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
+    await botClient.SetWebhook(settings.WEBHOOK_BASE_URL);
+}
 
-app.MapGet("/weatherforecast", () =>
+app.UseMiddleware<ErrorHandlingMiddleware>();
+app.MapControllers();
+
+if (!app.Environment.IsDevelopment())
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+    app.UseHttpsRedirection();
+}
+
 
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
