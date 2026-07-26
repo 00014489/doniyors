@@ -68,7 +68,7 @@
             }
           },
           "options": {
-            "allowedHosts": ["pathwayed-chere-soppily.ngrok-free.dev"]
+            "allowedHosts": ["flyover-brought-consensus.ngrok-free.dev"]
           },
           "defaultConfiguration": "development"
         },

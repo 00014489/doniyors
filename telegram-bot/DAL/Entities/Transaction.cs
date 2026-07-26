@@ -13,8 +13,6 @@ namespace telegram_bot.DAL.Entities
 
         public int TravelId { get; set; }
 
-        public int Points { get; set; }
-
         public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
         public User User { get; set; } = null!;

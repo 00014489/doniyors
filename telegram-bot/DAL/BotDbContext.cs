@@ -111,20 +111,17 @@ namespace telegram_bot.DAL
 
                 entity.HasKey(x => x.Id);
 
-                entity.Property(x => x.Points)
-                    .IsRequired();
-
                 entity.Property(x => x.CreatedAt)
                     .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                entity.HasOne(x => x.User)
-                    .WithMany()
-                    .HasForeignKey(x => x.UserId)
+                entity.HasOne(t => t.User)
+                    .WithMany(u => u.Transactions)
+                    .HasForeignKey(t => t.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
 
-                entity.HasOne(x => x.Travel)
-                    .WithMany(x => x.Transactions)
-                    .HasForeignKey(x => x.TravelId)
+                entity.HasOne(t => t.Travel)
+                    .WithMany(tr => tr.Transactions)
+                    .HasForeignKey(t => t.TravelId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
             modelBuilder.Entity<UserSession>(entity =>

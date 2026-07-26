@@ -1,0 +1,5 @@
+<section class="list">
+      @for (user of users(); track user.id) {
+        <app-user-row [user]="user" />
+      }
+    </section>

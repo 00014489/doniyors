@@ -1,17 +1,21 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { TelegramService } from '../../core/services/telegram-service';
+import { TranslatePipe } from '@ngx-translate/core';
+import { MobileNav, NavItem } from "../../shared/components/mobile-nav/mobile-nav";
+import { Home } from "../../pages/home/home";
+import { QrCode } from "../../pages/qr-code/qr-code";
 
 @Component({
   selector: 'app-mobile-component',
-  imports: [],
+  imports: [TranslatePipe, MobileNav, Home, QrCode],
   templateUrl: './mobile-component.html',
   styleUrl: './mobile-component.scss',
 })
 export class MobileComponent {
-  private telegram = inject(TelegramService);
+  protected readonly tg = inject(TelegramService);
+  protected readonly activeTab = signal<NavItem>('home');
 
-  readonly message = computed(() => {
-    const user = this.telegram.user();
-    return user ? `Hello, you are logged in with phone ${user.first_name}` : '';
-  });
+  setTab(tab: NavItem): void {
+    this.activeTab.set(tab);
+  }
 }

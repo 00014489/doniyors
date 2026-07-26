@@ -1,0 +1,41 @@
+.row {
+  display: flex;
+  align-items: center;
+
+  gap: 14px;
+
+  padding: 14px 18px;
+
+  border-bottom: 1px solid var(--app-border);
+
+  -webkit-user-select: none;
+  user-select: none;
+
+  -webkit-tap-highlight-color: transparent;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+
+  border-radius: 50%;
+
+  object-fit: cover;
+}
+
+.content {
+  flex: 1;
+}
+
+.username {
+  font-weight: 600;
+}
+
+.points {
+  color: var(--app-warning);
+  font-weight: 700;
+}

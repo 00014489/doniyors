@@ -1,1 +1,139 @@
-/* You can add global styles to this file, and also import other style files */
+/* ==========================================================
+   TELEGRAM FALLBACK THEMES
+   ========================================================== */
+
+/* Light (default) */
+:root {
+
+  --tg-bg-color: #f5f6f8;
+  --tg-secondary-bg-color: #ffffff;
+
+  --tg-text-color: #111827;
+  --tg-hint-color: #4b5563;   // darkened from #6b7280 — was 4.47:1, now ~7:1 against --tg-bg-color
+  --tg-link-color: #1466b3;   // darkened from #3390ec — was 3.06:1, now ~5.4:1 against --tg-bg-color
+
+}
+
+/* Dark fallback */
+[data-tg-color-scheme="dark"] {
+
+  --tg-bg-color: #0f1723;
+  --tg-secondary-bg-color: #18212d;
+
+  --tg-text-color: #f2f5fa;
+  --tg-hint-color: #9aa8b7;   // already ~7.4:1, unchanged
+  --tg-link-color: #4d9dff;   // already ~6.5:1, unchanged
+
+}
+
+/* ==========================================================
+   SEMANTIC VARIABLES
+   ========================================================== */
+
+:root {
+
+  --app-bg: var(--tg-bg-color);
+  --app-surface: var(--tg-secondary-bg-color);
+
+  --app-surface-2: color-mix(
+    in srgb,
+    var(--app-surface) 92%,
+    var(--app-text) 8%
+  );
+
+  --app-text: var(--tg-text-color);
+
+  --app-text-secondary: var(--tg-hint-color);
+
+  --app-primary: var(--tg-link-color);
+
+  --app-border: color-mix(
+    in srgb,
+    var(--app-text) 10%,
+    transparent
+  );
+
+  --app-success: #47c66b;
+  --app-warning: #ffb84d;
+  --app-danger: #ff5f5f;
+
+  --app-radius: 18px;
+
+}
+
+/* ==========================================================
+   GLOBAL
+   ========================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+
+  margin: 0;
+  height: 100%;
+
+  background: var(--app-bg);
+  color: var(--app-text);
+
+  transition:
+    background .25s ease,
+    color .25s ease;
+
+  font-family:
+    Inter,
+    Roboto,
+    sans-serif;
+}
+
+/* Native feeling, without breaking text selection or keyboard access */
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a,
+[role='button'],
+nav {
+  user-select: none;
+}
+
+button,
+input,
+textarea,
+select,
+a {
+
+  border: none;
+
+  background: none;
+
+  color: inherit;
+
+  font: inherit;
+}
+
+/* Visible focus ring for keyboard/AT users only; mouse/touch clicks stay clean */
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--app-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible) {
+  outline: none;
+}
+
+body::-webkit-scrollbar {
+  display: none;
+}

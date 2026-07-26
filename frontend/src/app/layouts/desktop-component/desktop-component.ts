@@ -1,17 +1,13 @@
-import { Component, computed, inject } from '@angular/core';
-import { TelegramService } from '../../core/services/telegram-service';
+import { Component } from '@angular/core';
+import { DeskNav } from "../../shared/components/desk-nav/desk-nav";
+import { RouterOutlet } from "@angular/router";
 
 @Component({
   selector: 'app-desktop-component',
-  imports: [],
+  imports: [DeskNav, RouterOutlet],
   templateUrl: './desktop-component.html',
   styleUrl: './desktop-component.scss',
 })
 export class DesktopComponent {
-  private telegram = inject(TelegramService);
-
-  readonly message = computed(() => {
-    const user = this.telegram.user();
-    return user ? `Hello, you are logged in with phone ${user.first_name}` : '';
-  });
+  
 }

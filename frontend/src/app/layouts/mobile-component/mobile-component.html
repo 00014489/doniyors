@@ -1,1 +1,28 @@
-<h2>{{ message() }}</h2>
+<div class="page">
+
+    @switch (activeTab()) {
+
+        @case ('home') {
+            <app-home />
+        }
+
+        @case ('qr') {
+            <app-qr-code />
+            <!-- <div class="mobile-layout">
+                <h1>{{ 'nav.qrCode' | translate }}</h1>
+            </div> -->
+        }
+
+        @case ('profile') {
+            <div class="mobile-layout">
+                <h1>{{ 'nav.profile' | translate }}</h1>
+            </div>
+        }
+
+    }
+
+</div>
+
+<app-mobile-nav
+    [active]="activeTab()"
+    (activeChange)="setTab($event)" />

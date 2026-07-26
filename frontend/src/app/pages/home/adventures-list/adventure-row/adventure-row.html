@@ -1,0 +1,17 @@
+<div class="card">
+  <img
+    class="image"
+    [src]="adventure().image"
+    [alt]="adventure().title"
+  />
+
+  <div class="body">
+    <h3>{{ adventure().title }}</h3>
+
+    <p>{{ adventure().date }}</p>
+
+    <span class="reward">
+      +{{ adventure().reward }} pts
+    </span>
+  </div>
+</div>

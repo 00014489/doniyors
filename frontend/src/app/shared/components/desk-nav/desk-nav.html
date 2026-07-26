@@ -1,0 +1,68 @@
+<aside
+  class="sidebar"
+  [class.sidebar--collapsed]="collapsed()">
+
+  <header class="sidebar__header">
+    <button
+      type="button"
+      class="sidebar__toggle"
+      (click)="toggle()"
+      [attr.aria-label]="collapsed() ? 'Expand navigation' : 'Collapse navigation'">
+
+      <span class="material-symbols-rounded">
+        menu
+      </span>
+
+    </button>
+
+    @if (!collapsed()) {
+      <h1>Admin Panel</h1>
+    }
+  </header>
+
+  <nav aria-label="Primary navigation">
+    <ul class="sidebar__nav">
+
+      @for (item of items(); track item.route) {
+
+        <li>
+
+          <a
+            [routerLink]="item.route"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: true }">
+
+            <span class="material-symbols-rounded">
+              {{ item.icon }}
+            </span>
+
+            @if (!collapsed()) {
+              <span>{{ item.label }}</span>
+            }
+
+          </a>
+
+        </li>
+
+      }
+
+    </ul>
+  </nav>
+
+  <footer class="sidebar__footer">
+
+    <button type="button">
+
+      <span class="material-symbols-rounded">
+        logout
+      </span>
+
+      @if (!collapsed()) {
+        <span>Logout</span>
+      }
+
+    </button>
+
+  </footer>
+
+</aside>

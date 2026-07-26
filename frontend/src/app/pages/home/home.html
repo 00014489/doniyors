@@ -1,0 +1,65 @@
+<div class="home">
+    <nav class="tabs" aria-label="Home sections">
+    <button
+        type="button"
+        class="tab"
+        [class.active]="selectedTab() === 'users'"
+        (click)="selectTab('users')"
+        aria-pressed="{{ selectedTab() === 'users' }}"
+    >
+        Users
+    </button>
+
+    <button
+        type="button"
+        class="tab"
+        [class.active]="selectedTab() === 'adventures'"
+        (click)="selectTab('adventures')"
+        aria-pressed="{{ selectedTab() === 'adventures' }}"
+    >
+        Adventures
+    </button>
+    </nav>
+
+    <div class="content">
+
+        @if (selectedTab() === 'users') {
+            <section class="section">
+
+                <header class="section-header">
+                <h2 class="section-title">
+                    Top users this season
+                </h2>
+
+                <p class="section-subtitle">
+                    Ranked by points earned
+                </p>
+                </header>
+
+                <app-leaderboard [users]="users()" />
+
+            </section>
+
+            }
+
+            @if (selectedTab() === 'adventures') {
+
+            <section class="section">
+
+                <header class="section-header">
+                <h2 class="section-title">
+                    Adventures
+                </h2>
+
+                <p class="section-subtitle">
+                    Complete adventures and earn rewards
+                </p>
+                </header>
+
+                <app-adventures-list [adventures]="adventures()" />
+
+            </section>
+
+            }
+    </div>
+</div>

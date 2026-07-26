@@ -1,0 +1,11 @@
+.list {
+  display: flex;
+  flex-direction: column;
+
+  background: var(--app-surface);
+
+  border-radius: var(--app-radius);
+  padding-bottom: 16px;
+
+  overflow: hidden;
+}

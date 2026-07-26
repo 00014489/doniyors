@@ -1,0 +1,30 @@
+{
+    "common": {
+        "ok": "OK",
+        "cancel": "Bekor qilish"
+    },
+    "desktop": {
+        "onlyAdmin": "Kompyuterdan faqat administratorlar foydalanishi mumkin.",
+        "welcome": "Xush kelibsiz",
+        "sidebar": "Yon panel"
+    },
+    "mobile": {
+        "greeting": "Salom",
+        "runningOn": "Ishlamoqda"
+    },
+    "nav": {
+        "main": "Asosiy",
+        "qrCode": "QR kod",
+        "profile": "Profil"
+    },
+    "home": {
+        "title": "Xush kelibsiz",
+        "users": "Foydalanuvchilar",
+        "adventures": "Sarguzashtlar",
+        "usersPlacingOrders": "Buyurtma berayotgan foydalanuvchilar",
+        "plannedAdventures": "Rejalashtirilgan sarguzashtlar",
+        "viewAllUsers": "Barcha foydalanuvchilarni ko'rish",
+        "seeAll": "Hammasini ko'rish",
+        "pts": "ball"
+    }
+}

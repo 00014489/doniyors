@@ -12,7 +12,7 @@ using telegram_bot.DAL;
 namespace telegram_bot.Migrations
 {
     [DbContext(typeof(BotDbContext))]
-    [Migration("20260704204427_InitialCreate")]
+    [Migration("20260726094254_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -37,9 +37,6 @@ namespace telegram_bot.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<int>("Points")
-                        .HasColumnType("integer");
 
                     b.Property<int>("TravelId")
                         .HasColumnType("integer");
@@ -225,7 +222,7 @@ namespace telegram_bot.Migrations
                         .IsRequired();
 
                     b.HasOne("telegram_bot.DAL.Entities.User", "User")
-                        .WithMany()
+                        .WithMany("Transactions")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -271,6 +268,8 @@ namespace telegram_bot.Migrations
             modelBuilder.Entity("telegram_bot.DAL.Entities.User", b =>
                 {
                     b.Navigation("Session");
+
+                    b.Navigation("Transactions");
                 });
 #pragma warning restore 612, 618
         }

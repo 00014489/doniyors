@@ -23,6 +23,7 @@ namespace telegram_bot.DAL.Entities
         public string LanguageCode { get; set; } = string.Empty;
 
         public int TypeUserId { get; set; } = 3;
+        public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
 
         public TypeUser TypeUser { get; set; } = null!;
         public UserSession? Session { get; set; }

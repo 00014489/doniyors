@@ -1,0 +1,50 @@
+.card {
+  display: flex;
+  align-items: center;
+
+  gap: 14px;
+
+  padding: 12px;
+
+  background: var(--app-surface);
+
+  border-radius: var(--app-radius);
+
+  -webkit-user-select: none;
+  user-select: none;
+
+  -webkit-tap-highlight-color: transparent;
+}
+
+.image {
+  width: 84px;
+  height: 84px;
+
+  border-radius: 12px;
+
+  object-fit: cover;
+}
+
+.body {
+  flex: 1;
+}
+
+h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+p {
+  margin: 0;
+  color: var(--app-text-secondary);
+  font-size: 14px;
+}
+
+.reward {
+  display: inline-block;
+  margin-top: 8px;
+
+  color: var(--app-success);
+
+  font-weight: 700;
+}

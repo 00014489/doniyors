@@ -1,0 +1,33 @@
+<div class="card">
+  <div class="qr">
+    <qrcode
+      [qrdata]="qrToken()"
+      [width]="240"
+      [margin]="1"
+      [errorCorrectionLevel]="'M'"
+      [elementType]="'svg'"
+      colorDark="#111827"
+      colorLight="#ffffff">
+    </qrcode>
+  </div>
+
+  <div class="divider"></div>
+
+  <footer class="user">
+    @if (avatar()) {
+      <img
+        [src]="avatar()"
+        [alt]="displayName()">
+    }
+
+    <div class="info">
+      <div class="name">
+        @{{ displayName() }}
+      </div>
+
+      <div class="points">
+        {{ points() }} pts
+      </div>
+    </div>
+  </footer>
+</div>

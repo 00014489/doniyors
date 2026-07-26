@@ -1,12 +1,54 @@
-<p>DEBUG platform: {{ telegram.platform() }}</p>
-<p>DEBUG isReady: {{ layout.isReady() }}</p>
+@if (tg.isSupportedPlatform()) {
 
-@if (layout.isReady()) {
-  @if (layout.isMobile()) {
-    <app-mobile-component></app-mobile-component>
+  @if (showSplash()) {
+
+    <div
+      class="splash-screen"
+      [class.fade-out]="fadingOut()"
+      role="status"
+      aria-live="polite">
+
+      <img
+        [ngSrc]="splashImage()"
+        fill
+        priority
+        alt="" />
+
+      <span class="visually-hidden">
+        Loading…
+      </span>
+
+    </div>
+
   } @else {
-    <app-desktop-component></app-desktop-component>
+
+    @if (authError()) {
+      <div class="auth-error-banner" role="alert">
+        <p>{{ authError() }}</p>
+      </div>
+    }
+
+    @switch (tg.deviceType()) {
+
+      @case ('mobile') {
+        <app-mobile-component />
+      }
+
+      @case ('desktop') {
+
+        <!-- @if (auth.isAdmin()) { -->
+          <app-desktop-component />
+        <!-- } @else { -->
+          <!-- <app-mobile-component /> -->
+        <!-- } -->
+      }
+    }
   }
+
 } @else {
-  <h1>U logged in not from telegram</h1>
+
+  <div class="unsupported-screen" role="alert">
+    <p>{{ tg.unsupportedReason() }}</p>
+  </div>
+
 }

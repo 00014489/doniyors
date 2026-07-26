@@ -1,0 +1,30 @@
+{
+    "common": {
+        "ok": "OK",
+        "cancel": "Cancel"
+    },
+    "desktop": {
+        "onlyAdmin": "Desktop access is available only for administrators.",
+        "welcome": "Welcome",
+        "sidebar": "Sidebar"
+    },
+    "mobile": {
+        "greeting": "Hi",
+        "runningOn": "Running on"
+    },
+    "nav": {
+        "main": "Main",
+        "qrCode": "QR Code",
+        "profile": "Profile"
+    },
+    "home": {
+        "title": "Welcome",
+        "users": "Users",
+        "adventures": "Adventures",
+        "usersPlacingOrders": "Users placing orders",
+        "plannedAdventures": "Planned Adventures",
+        "viewAllUsers": "View all users",
+        "seeAll": "See all",
+        "pts": "pts"
+    }
+}
