@@ -9,7 +9,7 @@ namespace backend.DAL.Entities
     public class Travel
     {
         public int Id { get; set; }
-
+    
         public string Title { get; set; } = null!;
 
         public DateTimeOffset TravelDate { get; set; }
@@ -21,5 +21,6 @@ namespace backend.DAL.Entities
         public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
         public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
+        public ICollection<TravelImage> Images { get; set; } = new List<TravelImage>();
     }
 }

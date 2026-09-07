@@ -12,7 +12,7 @@ using telegram_bot.DAL;
 namespace telegram_bot.Migrations
 {
     [DbContext(typeof(BotDbContext))]
-    [Migration("20260726094254_InitialCreate")]
+    [Migration("20260802103026_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -20,7 +20,7 @@ namespace telegram_bot.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.16")
+                .HasAnnotation("ProductVersion", "10.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);

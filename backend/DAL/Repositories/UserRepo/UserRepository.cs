@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using backend.DAL.Entities;
 using backend.DTOs;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +16,7 @@ namespace backend.DAL.Repositories.UserRepo
         public async Task<User?> GetByTelegramIdAsync(long telegramId)
         {
             return await _context.Users
+                .Include(u => u.TypeUser)
                 .FirstOrDefaultAsync(u => u.TgUserId == telegramId);
         }
 

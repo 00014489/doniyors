@@ -26,6 +26,8 @@ namespace backend.Controllers
         {
             var response = await _authService.LoginAsync(request.InitData);
 
+            Console.WriteLine($"AuthController.Login: response = {response}");
+
             return Ok(response);
         }
     }

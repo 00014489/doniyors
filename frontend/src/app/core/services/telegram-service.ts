@@ -94,14 +94,12 @@ export class TelegramService {
   readonly platform = signal(this.webApp?.platform ?? 'unknown');
 
   readonly deviceType = computed<'mobile' | 'desktop'>(() => {
-    switch (this.platform()) {
-      case 'android':
-      case 'ios':
-        return 'mobile';
+    const platform = this.platform();
+    // console.log('Telegram platform:', platform);
 
-      default:
-        return 'desktop';
-    }
+    return platform === 'tdesktop' || platform === 'macos' || platform === 'weba'
+      ? 'desktop'
+      : 'mobile';
   });
 
   readonly isSupportedPlatform = computed(() => this.available());
@@ -126,9 +124,9 @@ export class TelegramService {
 
     this.webApp.ready();
 
-    console.log('Telegram platform:', this.webApp.platform);
-    console.log('Telegram initData:', this.webApp.initData);
-    console.log('Telegram user:', this.webApp.initDataUnsafe.user);
+    // console.log('Telegram platform:', this.webApp.platform);
+    // console.log('Telegram initData:', this.webApp.initData);
+    // console.log('Telegram user:', this.webApp.initDataUnsafe.user);
 
     const onThemeChanged = () => {
       this.colorScheme.set(this.webApp!.colorScheme);

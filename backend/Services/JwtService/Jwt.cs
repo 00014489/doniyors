@@ -35,8 +35,13 @@ namespace backend.Services.JwtService
 
             var claims = new[]
             {
-                new Claim("UserId", user.Id.ToString()),
-                new Claim("TypeUser", user.TypeUserId.ToString())
+                new Claim(
+                    ClaimTypes.NameIdentifier,
+                    user.Id.ToString()),
+
+                new Claim(
+                    ClaimTypes.Role,
+                    user.TypeUser.Name)
             };
 
             var token = new JwtSecurityToken(

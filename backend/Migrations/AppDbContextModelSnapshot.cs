@@ -4,14 +4,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using telegram_bot.DAL;
+using backend.DAL;
 
 #nullable disable
 
-namespace telegram_bot.Migrations
+namespace backend.Migrations
 {
-    [DbContext(typeof(BotDbContext))]
-    partial class BotDbContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(AppDbContext))]
+    partial class AppDbContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
@@ -22,7 +22,7 @@ namespace telegram_bot.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("telegram_bot.DAL.Entities.Transaction", b =>
+            modelBuilder.Entity("backend.DAL.Entities.Transaction", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -50,7 +50,7 @@ namespace telegram_bot.Migrations
                     b.ToTable("Transactions", (string)null);
                 });
 
-            modelBuilder.Entity("telegram_bot.DAL.Entities.Travel", b =>
+            modelBuilder.Entity("backend.DAL.Entities.Travel", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -82,7 +82,40 @@ namespace telegram_bot.Migrations
                     b.ToTable("Travels", (string)null);
                 });
 
-            modelBuilder.Entity("telegram_bot.DAL.Entities.TypeUser", b =>
+            modelBuilder.Entity("backend.DAL.Entities.TravelImage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int>("TravelId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TravelId");
+
+                    b.ToTable("TravelImages", (string)null);
+                });
+
+            modelBuilder.Entity("backend.DAL.Entities.TypeUser", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -128,7 +161,7 @@ namespace telegram_bot.Migrations
                         });
                 });
 
-            modelBuilder.Entity("telegram_bot.DAL.Entities.User", b =>
+            modelBuilder.Entity("backend.DAL.Entities.User", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -186,7 +219,7 @@ namespace telegram_bot.Migrations
                     b.ToTable("Users", (string)null);
                 });
 
-            modelBuilder.Entity("telegram_bot.DAL.Entities.UserSession", b =>
+            modelBuilder.Entity("backend.DAL.Entities.UserSession", b =>
                 {
                     b.Property<long>("UserId")
                         .HasColumnType("bigint");
@@ -210,15 +243,15 @@ namespace telegram_bot.Migrations
                     b.ToTable("UserSessions", (string)null);
                 });
 
-            modelBuilder.Entity("telegram_bot.DAL.Entities.Transaction", b =>
+            modelBuilder.Entity("backend.DAL.Entities.Transaction", b =>
                 {
-                    b.HasOne("telegram_bot.DAL.Entities.Travel", "Travel")
+                    b.HasOne("backend.DAL.Entities.Travel", "Travel")
                         .WithMany("Transactions")
                         .HasForeignKey("TravelId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("telegram_bot.DAL.Entities.User", "User")
+                    b.HasOne("backend.DAL.Entities.User", "User")
                         .WithMany("Transactions")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -229,9 +262,20 @@ namespace telegram_bot.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("telegram_bot.DAL.Entities.User", b =>
+            modelBuilder.Entity("backend.DAL.Entities.TravelImage", b =>
                 {
-                    b.HasOne("telegram_bot.DAL.Entities.TypeUser", "TypeUser")
+                    b.HasOne("backend.DAL.Entities.Travel", "Travel")
+                        .WithMany("Images")
+                        .HasForeignKey("TravelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Travel");
+                });
+
+            modelBuilder.Entity("backend.DAL.Entities.User", b =>
+                {
+                    b.HasOne("backend.DAL.Entities.TypeUser", "TypeUser")
                         .WithMany("Users")
                         .HasForeignKey("TypeUserId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -240,29 +284,31 @@ namespace telegram_bot.Migrations
                     b.Navigation("TypeUser");
                 });
 
-            modelBuilder.Entity("telegram_bot.DAL.Entities.UserSession", b =>
+            modelBuilder.Entity("backend.DAL.Entities.UserSession", b =>
                 {
-                    b.HasOne("telegram_bot.DAL.Entities.User", "User")
+                    b.HasOne("backend.DAL.Entities.User", "User")
                         .WithOne("Session")
-                        .HasForeignKey("telegram_bot.DAL.Entities.UserSession", "UserId")
-                        .HasPrincipalKey("telegram_bot.DAL.Entities.User", "TgUserId")
+                        .HasForeignKey("backend.DAL.Entities.UserSession", "UserId")
+                        .HasPrincipalKey("backend.DAL.Entities.User", "TgUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("telegram_bot.DAL.Entities.Travel", b =>
+            modelBuilder.Entity("backend.DAL.Entities.Travel", b =>
                 {
+                    b.Navigation("Images");
+
                     b.Navigation("Transactions");
                 });
 
-            modelBuilder.Entity("telegram_bot.DAL.Entities.TypeUser", b =>
+            modelBuilder.Entity("backend.DAL.Entities.TypeUser", b =>
                 {
                     b.Navigation("Users");
                 });
 
-            modelBuilder.Entity("telegram_bot.DAL.Entities.User", b =>
+            modelBuilder.Entity("backend.DAL.Entities.User", b =>
                 {
                     b.Navigation("Session");
 

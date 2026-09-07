@@ -19,6 +19,7 @@ namespace backend.DAL
         public DbSet<Travel> Travels => Set<Travel>();
         public DbSet<Transaction> Transactions => Set<Transaction>();
         public DbSet<UserSession> UserSessions => Set<UserSession>();
+        public DbSet<TravelImage> TravelImages => Set<TravelImage>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -103,6 +104,29 @@ namespace backend.DAL
 
                 entity.Property(x => x.CreatedAt)
                     .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            });
+
+             modelBuilder.Entity<TravelImage>(entity =>
+            {
+                entity.ToTable("TravelImages");
+
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Title)
+                    .HasMaxLength(255)
+                    .IsRequired();
+
+                entity.Property(x => x.ContentType)
+                    .HasMaxLength(100)
+                    .IsRequired();
+
+                entity.Property(x => x.CreatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasOne(x => x.Travel)
+                    .WithMany(x => x.Images)
+                    .HasForeignKey(x => x.TravelId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             // ================= TRANSACTION =================

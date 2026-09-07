@@ -1,0 +1,194 @@
+<section class="adventures">
+  <header class="adventures__header">
+    <div>
+      <p class="adventures__eyebrow">Management</p>
+
+      <h1>Adventures</h1>
+
+      <p class="adventures__description">
+        Manage available adventures and travel experiences.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      class="adventures__refresh"
+      [disabled]="isLoading()"
+      (click)="reload()">
+
+      <span class="material-symbols-rounded" aria-hidden="true">
+        refresh
+      </span>
+
+      <span>Refresh</span>
+    </button>
+  </header>
+
+  @if (isLoading()) {
+    <div
+      class="adventures__state"
+      role="status"
+      aria-live="polite">
+
+      <span
+        class="material-symbols-rounded adventures__spinner"
+        aria-hidden="true">
+        progress_activity
+      </span>
+
+      <p>Loading adventures...</p>
+    </div>
+  }
+
+  @if (errorMessage(); as error) {
+    <div
+      class="adventures__error"
+      role="alert">
+
+      <span
+        class="material-symbols-rounded"
+        aria-hidden="true">
+        error
+      </span>
+
+      <div>
+        <strong>Something went wrong</strong>
+        <p>{{ error }}</p>
+      </div>
+
+      <button
+        type="button"
+        (click)="reload()">
+        Try again
+      </button>
+    </div>
+  }
+
+  @if (!isLoading() && !errorMessage()) {
+
+  @if (adventures().length === 0) {
+
+    <div class="adventures__empty" role="status">
+      <span
+        class="material-symbols-rounded"
+        aria-hidden="true">
+        hiking
+      </span>
+
+      <h2>No data</h2>
+
+      <p>
+        There are no adventures available yet.
+      </p>
+    </div>
+
+  } @else {
+
+    <div class="adventures__table-wrapper">
+      <table class="adventures__table">
+
+        <caption class="sr-only">
+          List of available adventures
+        </caption>
+
+        <thead>
+          <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Adventure</th>
+            <th scope="col">Travel date</th>
+            <th scope="col">Cost</th>
+            <th scope="col">Points</th>
+            <th scope="col">Created</th>
+            <th scope="col">
+              <span class="sr-only">Actions</span>
+            </th>
+          </tr>
+        </thead>
+
+        <tbody>
+          @for (adventure of adventures(); track adventure.id) {
+
+            <tr>
+              <td>
+                <span class="adventures__id">
+                  #{{ adventure.id }}
+                </span>
+              </td>
+
+              <td>
+                <div class="adventures__title">
+                  <span
+                    class="material-symbols-rounded"
+                    aria-hidden="true">
+                    hiking
+                  </span>
+
+                  <strong>
+                    {{ adventure.title }}
+                  </strong>
+                </div>
+              </td>
+
+              <td>
+                <div class="adventures__date">
+                  <span
+                    class="material-symbols-rounded"
+                    aria-hidden="true">
+                    calendar_month
+                  </span>
+
+                  <span>
+                    {{ adventure.travelDate | date:'dd MMM yyyy, HH:mm' }}
+                  </span>
+                </div>
+              </td>
+
+              <td>
+                <strong>
+                  {{ adventure.cost }}
+                </strong>
+              </td>
+
+              <td>
+                <span class="adventures__points">
+                  <span
+                    class="material-symbols-rounded"
+                    aria-hidden="true">
+                    stars
+                  </span>
+
+                  {{ adventure.points }}
+                </span>
+              </td>
+
+              <td>
+                {{ adventure.createdAt | date:'dd MMM yyyy' }}
+              </td>
+
+              <td>
+                <button
+                  type="button"
+                  class="adventures__action"
+                  [attr.aria-label]="'Open ' + adventure.title"
+                  title="Open adventure">
+
+                  <span
+                    class="material-symbols-rounded"
+                    aria-hidden="true">
+                    more_vert
+                  </span>
+
+                </button>
+              </td>
+            </tr>
+
+          }
+        </tbody>
+
+      </table>
+    </div>
+
+  }
+
+}
+</section>

@@ -1,9 +1,11 @@
 using System.Text;
 using backend.DAL;
+using backend.DAL.Repositories.TravelRepo;
 using backend.DAL.Repositories.UserRepo;
 using backend.Services.AuthService;
 using backend.Services.JwtService;
 using backend.Services.TelegramValidator;
+using backend.Services.TravelService;
 using backend.Services.UserService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -11,8 +13,6 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// OpenAPI
-builder.Services.AddOpenApi();
 
 // Controllers
 builder.Services.AddControllers();
@@ -26,9 +26,14 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddSingleton<ITelegramValidator, TelegramValidator>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ITravelService, TravelService>();
+
 
 builder.Services.AddScoped<IJwt, Jwt>();
+
+
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ITravelRepository, TravelRepository>();
 
 // CORS
 builder.Services.AddCors(options =>
@@ -39,7 +44,7 @@ builder.Services.AddCors(options =>
             .WithOrigins(
                 "http://localhost:4200",      // Angular dev
                 "https://your-domain.com",     // Production
-                "https://flyover-brought-consensus.ngrok-free.dev"   // Ngrok
+                "https://pathwayed-chere-soppily.ngrok-free.dev"   // Ngrok
             )
             .AllowAnyHeader()
             .AllowAnyMethod();
@@ -74,11 +79,6 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-// OpenAPI
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
 
 app.UseHttpsRedirection();
 
