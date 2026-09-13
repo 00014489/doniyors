@@ -1,21 +1,24 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using telegram_bot.DAL.Entities;
+using Doniyors.Data.Entities;
 
 namespace telegram_bot.DAL.Repositories.Users
 {
     public interface IUserRepository
     {
-        Task<User?> GetByTgUserIdAsync(long tgUserId);
+        Task<User?> GetByTgUserIdAsync(
+            long tgUserId,
+            CancellationToken cancellationToken = default);
 
-        Task AddAsync(User user);
+        Task AddAsync(User user, CancellationToken cancellationToken = default);
 
-        void UpdateAsync(User user);
+        Task SaveChangesAsync(CancellationToken cancellationToken = default);
 
-        Task SaveChangesAsync();
-        Task UpdateLanguageAsync(long tgUserId, string languageCode);
-        Task<int> GetUserTypeAsync(long tgUserId);
+        Task UpdateLanguageAsync(
+            long tgUserId,
+            string languageCode,
+            CancellationToken cancellationToken = default);
+
+        Task<int> GetUserTypeAsync(
+            long tgUserId,
+            CancellationToken cancellationToken = default);
     }
 }

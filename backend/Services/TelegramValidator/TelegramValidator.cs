@@ -1,21 +1,28 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 using backend.DTOs;
+using backend.Options;
+using Microsoft.Extensions.Options;
 
 namespace backend.Services.TelegramValidator
 {
-    public class TelegramValidator: ITelegramValidator
+    public class TelegramValidator : ITelegramValidator
     {
-        private readonly IConfiguration _configuration;
+        /// <summary>Telegram rejects logins older than this; so do we.</summary>
+        private static readonly TimeSpan MaxAge = TimeSpan.FromHours(24);
 
-        public TelegramValidator(IConfiguration configuration)
+        private static readonly byte[] SecretSalt = Encoding.UTF8.GetBytes("WebAppData");
+
+        private readonly byte[] _secretKey;
+
+        public TelegramValidator(IOptions<TelegramOptions> options)
         {
-            _configuration = configuration;
+            // secret_key = HMAC_SHA256(key: "WebAppData", data: bot_token)
+            // The token never changes at runtime, so derive the key once.
+            _secretKey = HMACSHA256.HashData(
+                SecretSalt,
+                Encoding.UTF8.GetBytes(options.Value.BotToken));
         }
 
         public TelegramUser Validate(string initData)
@@ -23,53 +30,41 @@ namespace backend.Services.TelegramValidator
             if (string.IsNullOrWhiteSpace(initData))
                 throw new UnauthorizedAccessException("Empty initData.");
 
-            var botToken = _configuration["BotSettings:TELEGRAM_BOT_TOKEN"];
-
-            if (string.IsNullOrWhiteSpace(botToken))
-                throw new Exception("Telegram bot token is missing.");
-
             var values = ParseQueryString(initData);
 
-            if (!values.TryGetValue("hash", out var receivedHash))
+            if (!values.Remove("hash", out var receivedHash))
                 throw new UnauthorizedAccessException("Hash missing.");
 
-            values.Remove("hash");
-
-            var dataCheckString = string.Join('\n',
+            var dataCheckString = string.Join(
+                '\n',
                 values
-                    .OrderBy(x => x.Key)
-                    .Select(x => $"{x.Key}={x.Value}")
-            );
+                    .OrderBy(x => x.Key, StringComparer.Ordinal)
+                    .Select(x => $"{x.Key}={x.Value}"));
 
-            // secret = HMAC_SHA256("WebAppData", botToken)
-            using var hmacSecret = new HMACSHA256(Encoding.UTF8.GetBytes("WebAppData"));
-            var secret = hmacSecret.ComputeHash(Encoding.UTF8.GetBytes(botToken));
+            var expected = HMACSHA256.HashData(
+                _secretKey,
+                Encoding.UTF8.GetBytes(dataCheckString));
 
-            using var hmac = new HMACSHA256(secret);
-
-            var calculatedHash = Convert.ToHexString(
-                hmac.ComputeHash(
-                    Encoding.UTF8.GetBytes(dataCheckString)))
-                .ToLowerInvariant();
-
-            if (!string.Equals(calculatedHash, receivedHash, StringComparison.OrdinalIgnoreCase))
+            if (!IsHashEqual(expected, receivedHash))
                 throw new UnauthorizedAccessException("Invalid Telegram signature.");
 
-            // optional: reject old requests (>24h)
-            if (values.TryGetValue("auth_date", out var authDateString))
-            {
-                var authDate = DateTimeOffset.FromUnixTimeSeconds(long.Parse(authDateString));
-
-                if (DateTimeOffset.UtcNow - authDate > TimeSpan.FromHours(24))
-                    throw new UnauthorizedAccessException("Expired Telegram login.");
-            }
+            EnsureFresh(values);
 
             if (!values.TryGetValue("user", out var userJson))
                 throw new UnauthorizedAccessException("User missing.");
 
-            var user = JsonSerializer.Deserialize<TelegramUser>(userJson);
+            TelegramUser? user;
 
-            if (user == null)
+            try
+            {
+                user = JsonSerializer.Deserialize<TelegramUser>(userJson);
+            }
+            catch (JsonException)
+            {
+                throw new UnauthorizedAccessException("Cannot parse Telegram user.");
+            }
+
+            if (user is null)
                 throw new UnauthorizedAccessException("Cannot parse Telegram user.");
 
             if (user.IsBot)
@@ -78,9 +73,44 @@ namespace backend.Services.TelegramValidator
             return user;
         }
 
+        /// <summary>
+        /// Compared in constant time. A plain string comparison leaks, through
+        /// how long it takes to fail, how much of a guessed hash was correct.
+        /// </summary>
+        private static bool IsHashEqual(byte[] expected, string receivedHex)
+        {
+            byte[] received;
+
+            try
+            {
+                received = Convert.FromHexString(receivedHex);
+            }
+            catch (FormatException)
+            {
+                return false;
+            }
+
+            // Returns false on a length mismatch without short-circuiting.
+            return CryptographicOperations.FixedTimeEquals(expected, received);
+        }
+
+        private static void EnsureFresh(Dictionary<string, string> values)
+        {
+            if (!values.TryGetValue("auth_date", out var authDateString))
+                throw new UnauthorizedAccessException("auth_date missing.");
+
+            if (!long.TryParse(authDateString, out var unixSeconds))
+                throw new UnauthorizedAccessException("auth_date is malformed.");
+
+            var authDate = DateTimeOffset.FromUnixTimeSeconds(unixSeconds);
+
+            if (DateTimeOffset.UtcNow - authDate > MaxAge)
+                throw new UnauthorizedAccessException("Expired Telegram login.");
+        }
+
         private static Dictionary<string, string> ParseQueryString(string query)
         {
-            var result = new Dictionary<string, string>();
+            var result = new Dictionary<string, string>(StringComparer.Ordinal);
 
             foreach (var pair in query.Split('&', StringSplitOptions.RemoveEmptyEntries))
             {

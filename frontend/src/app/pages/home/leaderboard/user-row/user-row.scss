@@ -2,9 +2,9 @@
   display: flex;
   align-items: center;
 
-  gap: 14px;
+  gap: 12px;
 
-  padding: 14px 18px;
+  padding: 12px 16px;
 
   border-bottom: 1px solid var(--app-border);
 
@@ -18,24 +18,48 @@
   border-bottom: none;
 }
 
-.avatar {
-  width: 44px;
-  height: 44px;
-
-  border-radius: 50%;
-
-  object-fit: cover;
+/* The viewer's own row, so they can find themselves without reading every name. */
+.row--me {
+  background: color-mix(in srgb, var(--app-primary) 10%, transparent);
 }
 
-.content {
+.rank {
+  flex-shrink: 0;
+
+  min-width: 26px;
+
+  color: var(--app-text-secondary);
+
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.rank--medal {
+  font-size: 20px;
+}
+
+.name {
   flex: 1;
-}
 
-.username {
+  min-width: 0;
+
+  overflow: hidden;
+
+  color: var(--app-text);
+
   font-weight: 600;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .points {
+  flex-shrink: 0;
+
   color: var(--app-warning);
+
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }

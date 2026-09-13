@@ -1,0 +1,43 @@
+@use '../../../pages/desktop/admin' as admin;
+
+.confirm {
+  width: min(420px, calc(100vw - 2rem));
+  padding: 1.5rem;
+
+  border: 1px solid admin.$border;
+  border-radius: admin.$radius;
+
+  background: admin.$surface;
+  color: admin.$text;
+
+  box-shadow: 0 20px 45px rgb(15 23 42 / 18%);
+}
+
+.confirm::backdrop {
+  background: rgb(15 23 42 / 45%);
+}
+
+.confirm__heading {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.confirm__message {
+  margin: 0.625rem 0 0;
+  color: admin.$muted;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.confirm__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+
+  margin-top: 1.5rem;
+}
+
+.confirm__spinner {
+  font-size: 1.1rem;
+}

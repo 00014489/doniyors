@@ -1,18 +1,26 @@
-import { Component, computed, DestroyRef, effect, inject, signal } from '@angular/core';
-import { TelegramService } from './core/services/telegram-service';
-import { MobileComponent } from "./layouts/mobile-component/mobile-component";
-import { DesktopComponent } from "./layouts/desktop-component/desktop-component";
-import { AuthService } from './core/services/auth-service';
+import {
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  signal,
+} from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
+import { TranslatePipe } from '@ngx-translate/core';
+
+import { TelegramService } from './core/services/telegram-service';
+import { AuthService } from './core/services/auth-service';
+import { MobileComponent } from './layouts/mobile-component/mobile-component';
+import { DesktopComponent } from './layouts/desktop-component/desktop-component';
 
 const SPLASH_MIN_DURATION_MS = 3000; // how long the logo stays fully visible
-const SPLASH_FADE_MS = 500;          // fade-out transition length
+const SPLASH_FADE_MS = 500; // fade-out transition length
 
 @Component({
   selector: 'app-root',
-  imports: [MobileComponent, DesktopComponent, NgOptimizedImage],
+  imports: [MobileComponent, DesktopComponent, NgOptimizedImage, TranslatePipe],
   templateUrl: './app.html',
-  styleUrl: './app.scss'
+  styleUrl: './app.scss',
 })
 export class App {
   protected readonly tg = inject(TelegramService);
@@ -22,12 +30,10 @@ export class App {
 
   protected readonly showSplash = signal(true);
   protected readonly fadingOut = signal(false);
-  protected readonly authError = signal<string | null>(null);
+  protected readonly authFailed = signal(false);
 
   protected readonly splashImage = computed(() =>
-    this.tg.deviceType() === 'desktop'
-      ? '/desktop.png'
-      : '/phone.JPG',
+    this.tg.deviceType() === 'desktop' ? '/desktop.png' : '/phone.JPG',
   );
 
   constructor() {
@@ -47,10 +53,7 @@ export class App {
     });
 
     try {
-      await Promise.all([
-        this.auth.initialize(),
-        splashTimer,
-      ]);
+      await Promise.all([this.auth.initialize(), splashTimer]);
 
       this.fadingOut.set(true);
 
@@ -62,9 +65,7 @@ export class App {
     } catch (error) {
       console.error('Authentication failed', error);
 
-      this.authError.set(
-        "We couldn't sign you in. Please reopen the app from Telegram.",
-      );
+      this.authFailed.set(true);
 
       this.showSplash.set(false);
     }

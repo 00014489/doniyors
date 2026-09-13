@@ -1,57 +1,58 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using telegram_bot.DAL.Entities;
+using Doniyors.Data.Entities;
+using Doniyors.Data;
 
 namespace telegram_bot.DAL.Repositories.Users
 {
-    public class UserRepository: IUserRepository
+    public class UserRepository : IUserRepository
     {
-        private readonly BotDbContext _context;
+        private readonly AppDbContext _context;
 
-        public UserRepository(BotDbContext context)
+        public UserRepository(AppDbContext context)
         {
             _context = context;
         }
 
-        public async Task<User?> GetByTgUserIdAsync(long tgUserId)
+        public Task<User?> GetByTgUserIdAsync(
+            long tgUserId,
+            CancellationToken cancellationToken = default)
         {
-            return await _context.Users
-                .FirstOrDefaultAsync(x => x.TgUserId == tgUserId);
+            return _context.Users
+                .FirstOrDefaultAsync(x => x.TgUserId == tgUserId, cancellationToken);
         }
 
-        public async Task AddAsync(User user)
+        public async Task AddAsync(User user, CancellationToken cancellationToken = default)
         {
-            await _context.Users.AddAsync(user);
+            await _context.Users.AddAsync(user, cancellationToken);
         }
 
-        public void UpdateAsync(User user)
+        public Task SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            _context.Users.Update(user);
+            return _context.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task SaveChangesAsync()
+        public Task UpdateLanguageAsync(
+            long tgUserId,
+            string languageCode,
+            CancellationToken cancellationToken = default)
         {
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task UpdateLanguageAsync(long tgUserId, string languageCode)
-        {
-            await _context.Users
+            return _context.Users
                 .Where(u => u.TgUserId == tgUserId)
-                .ExecuteUpdateAsync(s => s
-                    .SetProperty(u => u.LanguageCode, languageCode)
-                    .SetProperty(u => u.UpdatedAt, DateTimeOffset.UtcNow));
+                .ExecuteUpdateAsync(
+                    s => s
+                        .SetProperty(u => u.LanguageCode, languageCode)
+                        .SetProperty(u => u.UpdatedAt, DateTimeOffset.UtcNow),
+                    cancellationToken);
         }
 
-        public async Task<int> GetUserTypeAsync(long tgUserId)
+        public Task<int> GetUserTypeAsync(
+            long tgUserId,
+            CancellationToken cancellationToken = default)
         {
-            return await _context.Users
+            return _context.Users
                 .Where(u => u.TgUserId == tgUserId)
                 .Select(u => u.TypeUserId)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(cancellationToken);
         }
     }
 }

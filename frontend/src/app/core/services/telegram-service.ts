@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { computed, DestroyRef, effect, inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
+import { computed, DestroyRef, effect, inject, Service, PLATFORM_ID, signal } from '@angular/core';
 
 export interface TelegramWebAppUser {
   id: number;
@@ -50,6 +50,22 @@ export type TelegramPlatform =
   | 'unigram'
   | 'unknown';
 
+/** Telegram's own back arrow in the Mini App header. */
+interface TelegramBackButton {
+  isVisible: boolean;
+
+  show(): void;
+  hide(): void;
+
+  onClick(cb: () => void): void;
+  offClick(cb: () => void): void;
+}
+
+interface TelegramHapticFeedback {
+  impactOccurred(style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft'): void;
+  selectionChanged(): void;
+}
+
 interface TelegramWebApp {
   initData: string;
   initDataUnsafe: TelegramWebAppInitData;
@@ -64,6 +80,9 @@ interface TelegramWebApp {
   requestFullscreen?(): void;
   exitFullscreen?(): void;
 
+  BackButton?: TelegramBackButton;
+  HapticFeedback?: TelegramHapticFeedback;
+
   onEvent(eventType: string, cb: (...args: unknown[]) => void): void;
   offEvent(eventType: string, cb: (...args: unknown[]) => void): void;
 }
@@ -75,9 +94,7 @@ declare global {
 }
 
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class TelegramService {
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
@@ -95,7 +112,6 @@ export class TelegramService {
 
   readonly deviceType = computed<'mobile' | 'desktop'>(() => {
     const platform = this.platform();
-    // console.log('Telegram platform:', platform);
 
     return platform === 'tdesktop' || platform === 'macos' || platform === 'weba'
       ? 'desktop'
@@ -103,12 +119,6 @@ export class TelegramService {
   });
 
   readonly isSupportedPlatform = computed(() => this.available());
-
-  readonly unsupportedReason = computed(() =>
-    this.available()
-      ? null
-      : 'Please open this application from Telegram.',
-  );
 
   readonly colorScheme = signal(this.webApp?.colorScheme ?? 'light');
 
@@ -123,10 +133,6 @@ export class TelegramService {
     }
 
     this.webApp.ready();
-
-    // console.log('Telegram platform:', this.webApp.platform);
-    // console.log('Telegram initData:', this.webApp.initData);
-    // console.log('Telegram user:', this.webApp.initDataUnsafe.user);
 
     const onThemeChanged = () => {
       this.colorScheme.set(this.webApp!.colorScheme);
@@ -168,6 +174,39 @@ export class TelegramService {
         this.exitFullscreen();
       }
     });
+  }
+
+  /**
+   * Shows Telegram's own back arrow and calls `handler` when it is tapped.
+   * Returns a teardown function; the caller owns the lifetime.
+   *
+   * Wiring the platform button rather than only drawing our own means the
+   * gesture users already reach for does the right thing.
+   */
+  showBackButton(handler: () => void): () => void {
+    const backButton = this.webApp?.BackButton;
+
+    if (!backButton) {
+      return () => undefined;
+    }
+
+    backButton.onClick(handler);
+    backButton.show();
+
+    return () => {
+      backButton.offClick(handler);
+      backButton.hide();
+    };
+  }
+
+  /** Calls `handler` whenever the Mini App becomes active again after being minimised. */
+  onActivated(handler: () => void): void {
+    this.webApp?.onEvent('activated', handler);
+  }
+
+  /** A short tap response where the platform supports it. */
+  tapFeedback(): void {
+    this.webApp?.HapticFeedback?.selectionChanged();
   }
 
   private enterFullscreen(): void {

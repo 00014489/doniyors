@@ -1,32 +1,40 @@
+<h1 class="visually-hidden">{{ 'nav.qrCode' | translate }}</h1>
+
 <div class="card">
   <div class="qr">
-    <qrcode
-      [qrdata]="qrToken()"
-      [width]="240"
-      [margin]="1"
-      [errorCorrectionLevel]="'M'"
-      [elementType]="'svg'"
-      colorDark="#111827"
-      colorLight="#ffffff">
-    </qrcode>
+    <!-- Rendered once the token has loaded: the library reports an error for
+         an empty value. -->
+    @if (qrToken(); as token) {
+      <qrcode
+        [qrdata]="token"
+        [width]="240"
+        [margin]="1"
+        [errorCorrectionLevel]="'M'"
+        [elementType]="'svg'"
+        [ariaLabel]="'qr.codeLabel' | translate"
+        colorDark="#111827"
+        colorLight="#ffffff">
+      </qrcode>
+    }
   </div>
 
   <div class="divider"></div>
 
   <footer class="user">
     @if (avatar()) {
+      <!-- Decorative: the name is written right next to it. -->
       <img
         [src]="avatar()"
-        [alt]="displayName()">
+        alt="">
     }
 
     <div class="info">
       <div class="name">
-        @{{ displayName() }}
+        {{ displayName() }}
       </div>
 
       <div class="points">
-        {{ points() }} pts
+        {{ points() }} {{ 'home.pts' | translate }}
       </div>
     </div>
   </footer>

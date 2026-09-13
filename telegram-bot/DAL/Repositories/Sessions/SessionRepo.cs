@@ -4,24 +4,25 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using telegram_bot.DAL.Entities;
+using Doniyors.Data.Entities;
+using Doniyors.Data;
 
 namespace telegram_bot.DAL.Repositories.Sessions
 {
     public class SessionRepo: ISessionRepo
     {
-        private readonly BotDbContext _context;
+        private readonly AppDbContext _context;
 
-        public SessionRepo(BotDbContext context)
+        public SessionRepo(AppDbContext context)
         {
             _context = context;
         }
 
-        public async Task<UserSession?> GetSessionByIdAsync(long userId)
+        public async Task<UserSession?> GetSessionByIdAsync(long userId, CancellationToken cancellationToken = default)
         {
-            return await _context.UserSessions.FirstOrDefaultAsync(x => x.UserId == userId);
+            return await _context.UserSessions.FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
         }
-        public async Task<UserSession> CreateAsync(long userId)
+        public async Task<UserSession> CreateAsync(long userId, CancellationToken cancellationToken = default)
         {
             var session = new UserSession
             {
@@ -32,31 +33,32 @@ namespace telegram_bot.DAL.Repositories.Sessions
             };
 
             _context.UserSessions.Add(session);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
 
             return session;
         }
 
-        public async Task<SessionStep> GetStepAsync(long userId)
+        public async Task<SessionStep> GetStepAsync(long userId, CancellationToken cancellationToken = default)
         {
             return await _context.UserSessions
                 .Where(x => x.UserId == userId)
                 .Select(x => x.Step)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task SetStepAsync(long userId, SessionStep step)
+        public async Task SetStepAsync(long userId, SessionStep step, CancellationToken cancellationToken = default)
         {
             await _context.UserSessions
                 .Where(x => x.UserId == userId)
                 .ExecuteUpdateAsync(updates => updates
                     .SetProperty(x => x.Step, step)
-                    .SetProperty(x => x.UpdatedAt, DateTimeOffset.UtcNow));
+                    .SetProperty(x => x.UpdatedAt, DateTimeOffset.UtcNow),
+                    cancellationToken);
         }
 
-        public async Task<T?> GetDataAsync<T>(long userId)
+        public async Task<T?> GetDataAsync<T>(long userId, CancellationToken cancellationToken = default)
         {
-            var session = await GetSessionByIdAsync(userId);
+            var session = await GetSessionByIdAsync(userId, cancellationToken);
 
             if (string.IsNullOrWhiteSpace(session?.DataJson))
                 return default;
@@ -64,7 +66,7 @@ namespace telegram_bot.DAL.Repositories.Sessions
             return JsonSerializer.Deserialize<T>(session.DataJson);
         }
 
-        public async Task SetDataAsync<T>(long userId, T data)
+        public async Task SetDataAsync<T>(long userId, T data, CancellationToken cancellationToken = default)
         {
             var json = JsonSerializer.Serialize(data);
 
@@ -72,10 +74,11 @@ namespace telegram_bot.DAL.Repositories.Sessions
                 .Where(x => x.UserId == userId)
                 .ExecuteUpdateAsync(update => update
                     .SetProperty(x => x.DataJson, json)
-                    .SetProperty(x => x.UpdatedAt, DateTimeOffset.UtcNow));
+                    .SetProperty(x => x.UpdatedAt, DateTimeOffset.UtcNow),
+                    cancellationToken);
         }
 
-        public async Task UpdateAsync<T>(long userId, SessionStep step, T data)
+        public async Task UpdateAsync<T>(long userId, SessionStep step, T data, CancellationToken cancellationToken = default)
         {
             var json = JsonSerializer.Serialize(data);
 
@@ -84,17 +87,19 @@ namespace telegram_bot.DAL.Repositories.Sessions
                 .ExecuteUpdateAsync(update => update
                     .SetProperty(x => x.Step, step)
                     .SetProperty(x => x.DataJson, json)
-                    .SetProperty(x => x.UpdatedAt, DateTimeOffset.UtcNow));
+                    .SetProperty(x => x.UpdatedAt, DateTimeOffset.UtcNow),
+                    cancellationToken);
         }
 
-        public async Task ClearAsync(long userId)
+        public async Task ClearAsync(long userId, CancellationToken cancellationToken = default)
         {
             await _context.UserSessions
                 .Where(x => x.UserId == userId)
                 .ExecuteUpdateAsync(update => update
                     .SetProperty(x => x.Step, SessionStep.None)
                     .SetProperty(x => x.DataJson, "{}")
-                    .SetProperty(x => x.UpdatedAt, DateTimeOffset.UtcNow));
+                    .SetProperty(x => x.UpdatedAt, DateTimeOffset.UtcNow),
+                    cancellationToken);
         }
 
     }

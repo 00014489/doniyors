@@ -1,0 +1,19 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=localhost;Port=5432;Database=MainDb;Username=postgres;Password=CHANGE_ME"
+  },
+  "Telegram": {
+    "BotToken": "CHANGE_ME"
+  },
+  "Webhook": {
+    "BaseUrl": "https://your-tunnel-or-domain/webhook",
+    "Secret": "CHANGE_ME-random-1-to-256-chars-A-Za-z0-9_-"
+  }
+}

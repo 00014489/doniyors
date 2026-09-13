@@ -1,5 +1,44 @@
-<section class="list">
-      @for (user of users(); track user.id) {
-        <app-user-row [user]="user" />
+<div class="season">
+
+  <label class="season__label" for="season-select">
+    {{ 'home.season' | translate }}
+  </label>
+
+  <div class="season__control">
+
+    <select
+      id="season-select"
+      class="season__select"
+      [value]="selectedSeasonKey()"
+      (change)="onSeasonChange($event)">
+
+      @for (option of options(); track option.key) {
+        <option [value]="option.key">{{ option.label }}</option>
       }
-    </section>
+
+    </select>
+
+    <span class="season__chevron material-symbols-rounded" aria-hidden="true">
+      expand_more
+    </span>
+
+  </div>
+
+</div>
+
+@if (entries().length) {
+
+  <section
+    class="list"
+    [class.list--loading]="loading()"
+    [attr.aria-busy]="loading()">
+    @for (entry of entries(); track entry.userId) {
+      <app-user-row [entry]="entry" />
+    }
+  </section>
+
+} @else {
+
+  <p class="empty">{{ 'home.noPointsThisSeason' | translate }}</p>
+
+}

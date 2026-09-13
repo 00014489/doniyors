@@ -1,0 +1,107 @@
+<div class="profile">
+
+  @if (failed()) {
+
+    <div class="state" role="alert">
+      <p>{{ 'profile.loadFailed' | translate }}</p>
+      <button type="button" class="retry" (click)="retry()">
+        {{ 'home.retry' | translate }}
+      </button>
+    </div>
+
+  } @else if (isLoading()) {
+
+    <div class="skeleton-header" aria-hidden="true">
+      <div class="skeleton skeleton--avatar"></div>
+      <div class="skeleton skeleton--line"></div>
+      <div class="skeleton skeleton--line skeleton--short"></div>
+    </div>
+
+  } @else if (profile(); as profile) {
+
+    <header class="header">
+
+      <app-avatar
+        class="header__avatar"
+        [name]="profile.displayName"
+        [photoUrl]="profile.photoUrl"
+        [size]="96" />
+
+      <h1 class="header__name">{{ profile.displayName }}</h1>
+
+      @if (profile.userName) {
+        <p class="header__username">&#64;{{ profile.userName }}</p>
+      }
+
+    </header>
+
+    <dl class="stats">
+
+      <div class="stat">
+        <dt>{{ 'profile.travels' | translate }}</dt>
+        <dd>{{ profile.travelsCount }}</dd>
+      </div>
+
+      <div class="stat">
+        <dt>{{ 'home.pts' | translate }}</dt>
+        <dd class="stat__points">{{ profile.points }}</dd>
+      </div>
+
+    </dl>
+
+    <section class="language" aria-labelledby="profile-language-title">
+
+      <h2 id="profile-language-title" class="language__title">
+        {{ 'profile.language' | translate }}
+      </h2>
+
+      <div
+        class="language__options"
+        role="radiogroup"
+        aria-labelledby="profile-language-title">
+
+        @for (option of languages; track option.code) {
+          <button
+            type="button"
+            role="radio"
+            class="language__option"
+            [class.language__option--active]="option.code === currentLanguage()"
+            [attr.aria-checked]="option.code === currentLanguage()"
+            [attr.lang]="option.code"
+            [disabled]="savingLanguage()"
+            (click)="chooseLanguage(option.code)">
+            {{ option.label }}
+          </button>
+        }
+
+      </div>
+
+      @if (languageFailed()) {
+        <p class="language__error" role="alert">
+          {{ 'profile.languageFailed' | translate }}
+        </p>
+      }
+
+    </section>
+
+    <section class="history">
+
+      <h2 class="history__title">{{ 'profile.history' | translate }}</h2>
+
+      @if (history().length) {
+
+        <app-adventures-list
+          [adventures]="history()"
+          (open)="onOpen($event)" />
+
+      } @else {
+
+        <p class="empty">{{ 'profile.noHistory' | translate }}</p>
+
+      }
+
+    </section>
+
+  }
+
+</div>

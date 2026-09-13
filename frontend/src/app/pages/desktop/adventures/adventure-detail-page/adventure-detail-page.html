@@ -1,0 +1,189 @@
+<section class="admin-page">
+
+  <nav class="admin-breadcrumb" [attr.aria-label]="'admin.common.breadcrumb' | translate">
+    <a routerLink="/adventures">{{ 'admin.adventures.title' | translate }}</a>
+
+    <span class="material-symbols-rounded" aria-hidden="true">
+      chevron_right
+    </span>
+
+    <span aria-current="page">{{ 'admin.common.details' | translate }}</span>
+  </nav>
+
+  @if (isLoading()) {
+    <div class="admin-state" role="status" aria-live="polite">
+
+      <span
+        class="material-symbols-rounded admin-spinner"
+        aria-hidden="true">
+        progress_activity
+      </span>
+
+      <p>{{ 'admin.adventures.loadingOne' | translate }}</p>
+    </div>
+  }
+
+  @if (errorMessage(); as error) {
+    <div class="admin-banner admin-page__banner" role="alert">
+
+      <span class="material-symbols-rounded" aria-hidden="true">
+        error
+      </span>
+
+      <div>
+        <strong>{{ 'admin.common.somethingWrong' | translate }}</strong>
+        <p>{{ error | translate }}</p>
+      </div>
+
+      <button type="button" class="admin-btn" (click)="goToList()">
+        {{ 'admin.adventures.backToList' | translate }}
+      </button>
+    </div>
+  }
+
+  @if (!isLoading() && !errorMessage()) {
+
+    @if (adventure(); as adventure) {
+
+      @if (deleteError(); as error) {
+        <div class="admin-banner admin-page__banner" role="alert">
+
+          <span class="material-symbols-rounded" aria-hidden="true">
+            error
+          </span>
+
+          <div>
+            <strong>{{ 'admin.common.somethingWrong' | translate }}</strong>
+            <p>{{ error | translate }}</p>
+          </div>
+        </div>
+      }
+
+      <header class="admin-page-header">
+
+        <div>
+          <p class="admin-eyebrow">{{ 'admin.adventures.eyebrow' | translate: { id: adventure.id } }}</p>
+
+          <h1>{{ adventure.title }}</h1>
+
+          <p
+            class="admin-status admin-page-header__status"
+            [class.is-active]="adventure.status"
+            [class.is-disabled]="!adventure.status">
+            {{ (adventure.status ? 'admin.common.active' : 'admin.common.disabled') | translate }}
+          </p>
+        </div>
+
+        <div class="admin-page-header__actions">
+
+          <button
+            type="button"
+            class="admin-btn admin-btn--secondary"
+            (click)="goBack()">
+
+            <span class="material-symbols-rounded" aria-hidden="true">
+              arrow_back
+            </span>
+
+            <span>{{ 'admin.common.back' | translate }}</span>
+          </button>
+
+          <a
+            class="admin-btn admin-btn--primary"
+            [routerLink]="['/adventures', adventure.id, 'edit']"
+            [attr.aria-label]="'admin.common.editItem' | translate: { name: adventure.title }">
+
+            <span class="material-symbols-rounded" aria-hidden="true">
+              edit
+            </span>
+
+            <span>{{ 'admin.common.edit' | translate }}</span>
+          </a>
+
+          <button
+            type="button"
+            class="admin-btn admin-btn--danger"
+            [disabled]="!adventure.status"
+            [attr.aria-label]="
+              (adventure.status ? 'admin.common.deleteItem' : 'admin.common.itemAlreadyDisabled')
+                | translate: { name: adventure.title }
+            "
+            (click)="askDelete()">
+
+            <span class="material-symbols-rounded" aria-hidden="true">
+              delete
+            </span>
+
+            <span>{{ 'admin.common.delete' | translate }}</span>
+          </button>
+
+        </div>
+
+      </header>
+
+      @if (adventure.images.length) {
+
+        <ul class="detail__gallery">
+
+          @for (image of adventure.images; track image.id) {
+            <li>
+              <img
+                [src]="imageUrl(image.id)"
+                [alt]="image.title || ('admin.adventures.imageAlt' | translate: { title: adventure.title })"
+                loading="lazy" />
+            </li>
+          }
+
+        </ul>
+
+      }
+
+      <dl class="admin-detail-grid">
+
+        <div class="admin-detail-item admin-detail-item--wide">
+          <dt>{{ 'admin.adventures.form.description' | translate }}</dt>
+          <dd class="admin-detail-item__text">{{ adventure.description || '—' }}</dd>
+        </div>
+
+        <div class="admin-detail-item">
+          <dt>{{ 'admin.adventures.colTravelDate' | translate }}</dt>
+          <dd>{{ adventure.travelDate | localDate: 'dd MMM yyyy, HH:mm' }}</dd>
+        </div>
+
+        <div class="admin-detail-item">
+          <dt>{{ 'admin.adventures.colCost' | translate }}</dt>
+          <dd>{{ adventure.cost | money }}</dd>
+        </div>
+
+        <div class="admin-detail-item">
+          <dt>{{ 'admin.common.points' | translate }}</dt>
+          <dd>{{ adventure.points }}</dd>
+        </div>
+
+        <div class="admin-detail-item">
+          <dt>{{ 'admin.common.created' | translate }}</dt>
+          <dd>{{ adventure.createdAt | localDate: 'dd MMM yyyy, HH:mm' }}</dd>
+        </div>
+
+        <div class="admin-detail-item">
+          <dt>{{ 'admin.common.status' | translate }}</dt>
+          <dd>{{ (adventure.status ? 'admin.common.active' : 'admin.common.disabled') | translate }}</dd>
+        </div>
+
+      </dl>
+
+      <app-confirm-dialog
+        [open]="confirmOpen()"
+        [heading]="'admin.adventures.deleteHeading' | translate"
+        [message]="'admin.adventures.deleteMessage' | translate: { title: adventure.title }"
+        [confirmLabel]="'admin.common.yes' | translate"
+        [cancelLabel]="'admin.common.cancel' | translate"
+        [busy]="isDeleting()"
+        (confirmed)="confirmDelete()"
+        (cancelled)="cancelDelete()" />
+
+    }
+
+  }
+
+</section>

@@ -1,10 +1,11 @@
+using backend.DTOs;
+using backend.Services.JwtService;
 using backend.Services.UserService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace backend.Controllers
 {
-
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
@@ -18,35 +19,40 @@ namespace backend.Controllers
         }
 
         [HttpGet("qr-code")]
-        public async Task<IActionResult> GetQrCode()
+        public async Task<ActionResult<QRCodeDto>> GetQrCode(CancellationToken cancellationToken)
         {
-            var userIdClaim = User.FindFirst("UserId");
-
-            if (userIdClaim == null)
+            if (!User.TryGetUserId(out var userId))
                 return Unauthorized();
 
-            int userId = int.Parse(userIdClaim.Value);
+            var result = await _userService.GetQrCodeAsync(userId, cancellationToken);
 
-            var result = await _userService.GetQrCodeAsync(userId);
+            if (result is null)
+                return NotFound();
 
-            if (result == null)
-                return Unauthorized();
-            // Console.WriteLine($"UserId: {userId}, QrToken: {result.QrToken}, Points: {result.Points}");
             return Ok(result);
         }
-        // [HttpGet("transactions/{tgUserId:long}")]
-        // public async Task<IActionResult> GetUserTransactions(long tgUserId)
-        // {
-        //     var userIdClaim = User.FindFirst("UserId");
 
-        //     if (userIdClaim is null)
-        //         return Unauthorized();
+        /// <summary>
+        /// The caller's own history in full; anyone else's is limited to the
+        /// current season.
+        /// </summary>
+        [HttpGet("transactions/{tgUserId:long}")]
+        public async Task<ActionResult<IReadOnlyList<UserTransactionDto>>> GetUserTransactions(
+            long tgUserId,
+            CancellationToken cancellationToken)
+        {
+            if (!User.TryGetUserId(out var userId))
+                return Unauthorized();
 
-        //     int userId = int.Parse(userIdClaim.Value);
+            var result = await _userService.GetUserTransactionsAsync(
+                tgUserId,
+                userId,
+                cancellationToken);
 
-        //     var result = await _userService.GetUserTransactionsAsync(tgUserId, userId);
+            if (result is null)
+                return Unauthorized();
 
-        //     return Ok(result);
-        // }
+            return Ok(result);
+        }
     }
 }

@@ -1,13 +1,13 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
+import { QRCodeComponent } from 'angularx-qrcode';
+import { TranslatePipe } from '@ngx-translate/core';
+
 import { TelegramService } from '../../core/services/telegram-service';
 import { QrService } from './qr-service';
-import { QRCodeComponent } from 'angularx-qrcode';
-
-
 
 @Component({
   selector: 'app-qr-code',
-  imports: [QRCodeComponent],
+  imports: [QRCodeComponent, TranslatePipe],
   templateUrl: './qr-code.html',
   styleUrl: './qr-code.scss',
 })
@@ -19,11 +19,16 @@ export class QrCode {
 
   readonly avatar = computed(() => this.user()?.photo_url ?? '');
 
-  readonly displayName = computed(() =>
-    this.user()?.username ??
-    this.user()?.first_name ??
-    'Telegram User',
-  );
+  /** "@username" when there is one; Telegram guarantees only the first name. */
+  readonly displayName = computed(() => {
+    const user = this.user();
+
+    if (!user) {
+      return '';
+    }
+
+    return user.username ? `@${user.username}` : user.first_name;
+  });
 
   readonly qrToken = this.qrService.qrToken;
   readonly points = this.qrService.points;

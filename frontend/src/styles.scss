@@ -1,3 +1,5 @@
+@use './app/pages/desktop/admin' as admin;
+
 /* ==========================================================
    TELEGRAM FALLBACK THEMES
    ========================================================== */
@@ -43,9 +45,13 @@
 
   --app-text: var(--tg-text-color);
 
-  --app-text-secondary: var(--tg-hint-color);
+  /* Telegram's own theme colours replace the fallbacks above, and they are not
+     built for WCAG AA: iOS light's hint #8e8e93 is 3.3:1 and its link #007aff
+     4:1 on white. Pulling each towards the text colour keeps the theme's hue
+     while taking it past 4.5:1 in both light and dark. */
+  --app-text-secondary: color-mix(in srgb, var(--tg-hint-color) 55%, var(--app-text));
 
-  --app-primary: var(--tg-link-color);
+  --app-primary: color-mix(in srgb, var(--tg-link-color) 75%, var(--app-text));
 
   --app-border: color-mix(
     in srgb,
@@ -53,9 +59,12 @@
     transparent
   );
 
-  --app-success: #47c66b;
-  --app-warning: #ffb84d;
-  --app-danger: #ff5f5f;
+  /* Used as text (points, rewards, errors). Fixed hues read well on dark but
+     fail on white (#47c66b is 2.2:1), so they follow the text colour too:
+     darker in the light scheme, lighter in the dark one. */
+  --app-success: color-mix(in srgb, #47c66b 60%, var(--app-text));
+  --app-warning: color-mix(in srgb, #ffb84d 50%, var(--app-text));
+  --app-danger: color-mix(in srgb, #ff5f5f 60%, var(--app-text));
 
   --app-radius: 18px;
 
@@ -88,6 +97,25 @@ body {
     Inter,
     Roboto,
     sans-serif;
+}
+
+/* Available to screen readers, invisible on screen. Used wherever a visual
+   cue (a medal, an icon) replaces text that assistive tech still needs. */
+.visually-hidden {
+  position: absolute;
+
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+
+  overflow: hidden;
+
+  clip-path: inset(50%);
+
+  white-space: nowrap;
+
+  border: 0;
 }
 
 /* Native feeling, without breaking text selection or keyboard access */
@@ -136,4 +164,714 @@ a:focus:not(:focus-visible) {
 
 body::-webkit-scrollbar {
   display: none;
+}
+/* ==========================================================
+   DESKTOP ADMIN DESIGN SYSTEM
+
+   Shared chrome for the admin pages (buttons, banners, state
+   panels). Defined once globally so every admin page and
+   shared component renders the same primitives.
+   ========================================================== */
+
+.admin-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+
+  min-height: 42px;
+  padding: .625rem 1rem;
+
+  border: 1px solid transparent;
+  border-radius: admin.$radius-sm;
+
+  font: inherit;
+  font-size: .9rem;
+  font-weight: 600;
+
+  text-decoration: none;
+  cursor: pointer;
+
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.admin-btn:disabled,
+.admin-btn[aria-disabled='true'] {
+  cursor: not-allowed;
+  opacity: .6;
+}
+
+.admin-btn:focus-visible,
+.admin-icon-btn:focus-visible {
+  outline: 3px solid rgb(37 99 235 / 35%);
+  outline-offset: 2px;
+  border-radius: admin.$radius-sm;
+}
+
+.admin-btn--primary {
+  background: admin.$primary;
+  border-color: admin.$primary;
+  color: #ffffff;
+}
+
+.admin-btn--primary:hover:not(:disabled) {
+  background: admin.$primary-dark;
+  border-color: admin.$primary-dark;
+}
+
+.admin-btn--secondary {
+  background: admin.$surface;
+  border-color: #dbe2ea;
+  color: #1e293b;
+}
+
+.admin-btn--secondary:hover:not(:disabled) {
+  background: admin.$surface-muted;
+  border-color: admin.$border-strong;
+}
+
+.admin-btn--danger {
+  background: admin.$surface;
+  border-color: admin.$danger-border;
+  color: admin.$danger;
+}
+
+.admin-btn--danger:hover:not(:disabled) {
+  background: admin.$danger-soft;
+}
+
+.admin-btn--danger:focus-visible {
+  outline-color: rgb(185 28 28 / 35%);
+}
+
+/* Solid danger button, used to confirm a destructive action. */
+.admin-btn--danger-solid {
+  background: admin.$danger;
+  border-color: admin.$danger;
+  color: #ffffff;
+}
+
+.admin-btn--danger-solid:hover:not(:disabled) {
+  background: #991b1b;
+  border-color: #991b1b;
+}
+
+/* Square icon-only button used inside tables and toolbars. */
+.admin-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 36px;
+  height: 36px;
+
+  border: none;
+  border-radius: .5rem;
+
+  background: transparent;
+  color: admin.$muted;
+
+  cursor: pointer;
+
+  transition:
+    background 150ms ease,
+    color 150ms ease;
+}
+
+.admin-icon-btn:hover:not(:disabled) {
+  background: admin.$border;
+  color: admin.$text;
+}
+
+.admin-icon-btn:disabled {
+  cursor: not-allowed;
+  opacity: .5;
+}
+
+.admin-icon-btn--danger:hover:not(:disabled) {
+  background: admin.$danger-soft;
+  color: admin.$danger;
+}
+
+.admin-status {
+  @include admin.status-badge;
+}
+
+/* Inline error / notice banner. */
+.admin-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+
+  padding: 1rem 1.25rem;
+
+  border: 1px solid admin.$danger-border;
+  border-radius: .75rem;
+
+  background: admin.$danger-soft;
+  color: #991b1b;
+}
+
+.admin-banner > .material-symbols-rounded {
+  font-size: 1.5rem;
+}
+
+.admin-banner strong {
+  display: block;
+}
+
+.admin-banner p {
+  margin: .25rem 0 0;
+  color: admin.$danger;
+}
+
+.admin-banner .admin-btn {
+  margin-left: auto;
+  border-color: #fca5a5;
+  background: admin.$surface;
+  color: #991b1b;
+}
+
+/* Centred panel for loading, empty and placeholder states. */
+.admin-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 320px;
+  padding: 2rem;
+
+  border: 1px solid admin.$border;
+  border-radius: admin.$radius;
+
+  background: admin.$surface;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 5%);
+
+  color: admin.$muted;
+  text-align: center;
+}
+
+.admin-state h2 {
+  margin: 1rem 0 0;
+  color: admin.$text;
+  font-size: 1.25rem;
+}
+
+.admin-state p {
+  margin: .5rem 0 0;
+  color: admin.$muted;
+}
+
+.admin-state__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 64px;
+  height: 64px;
+
+  border-radius: 50%;
+
+  background: admin.$primary-soft;
+  color: admin.$primary;
+
+  font-size: 2rem;
+}
+
+.admin-spinner {
+  animation: admin-spin 1s linear infinite;
+}
+
+@keyframes admin-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.sr-only {
+  position: absolute;
+
+  width: 1px;
+  height: 1px;
+
+  padding: 0;
+  margin: -1px;
+
+  overflow: hidden;
+
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .admin-btn,
+  .admin-icon-btn {
+    transition: none;
+  }
+
+  .admin-spinner {
+    animation: none;
+  }
+}
+
+/* ---- Page shell -------------------------------------------------------- */
+
+.admin-page {
+  min-height: 100%;
+  padding: 2rem;
+  background: admin.$bg;
+}
+
+.admin-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: .25rem;
+
+  margin-bottom: 1.25rem;
+
+  color: admin.$muted;
+  font-size: .85rem;
+}
+
+.admin-breadcrumb a {
+  color: admin.$primary;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.admin-breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+.admin-breadcrumb .material-symbols-rounded {
+  font-size: 1.1rem;
+}
+
+.admin-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
+
+  margin-bottom: 2rem;
+}
+
+.admin-page-header h1 {
+  margin: 0;
+  color: #111827;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.admin-eyebrow {
+  @include admin.eyebrow;
+}
+
+.admin-page-header__description {
+  margin: .5rem 0 0;
+  color: admin.$muted;
+  font-size: .95rem;
+}
+
+/* ---- Table ------------------------------------------------------------- */
+
+.admin-table-wrapper {
+  overflow-x: auto;
+
+  border: 1px solid admin.$border;
+  border-radius: admin.$radius;
+
+  background: admin.$surface;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 5%);
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table th {
+  padding: .875rem 1rem;
+
+  border-bottom: 1px solid admin.$border;
+
+  background: admin.$bg;
+  color: admin.$muted;
+
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.admin-table td {
+  padding: 1rem;
+
+  border-bottom: 1px solid admin.$surface-muted;
+
+  color: admin.$text-soft;
+  font-size: .9rem;
+
+  vertical-align: middle;
+}
+
+.admin-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-table tbody tr:hover {
+  background: admin.$bg;
+}
+
+.admin-table__id {
+  color: admin.$muted;
+  font-family: monospace;
+  font-size: .85rem;
+}
+
+/* Icon + label cell, e.g. an adventure title or a user name. */
+.admin-cell {
+  display: flex;
+  align-items: center;
+  gap: .625rem;
+
+  color: admin.$text;
+  white-space: nowrap;
+}
+
+.admin-cell .material-symbols-rounded {
+  color: admin.$primary;
+  font-size: 1.25rem;
+}
+
+.admin-cell--muted {
+  color: admin.$text-soft;
+}
+
+.admin-cell--muted .material-symbols-rounded {
+  color: admin.$muted;
+  font-size: 1.15rem;
+}
+
+.admin-cell--points {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+
+  color: #b45309;
+  font-weight: 700;
+}
+
+.admin-cell--points .material-symbols-rounded {
+  color: inherit;
+  font-size: 1.1rem;
+}
+
+.admin-row-actions {
+  display: flex;
+  align-items: center;
+  gap: .25rem;
+}
+
+/* ---- Detail grid ------------------------------------------------------- */
+
+.admin-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+
+  margin: 0;
+  padding: 1.5rem;
+
+  border: 1px solid admin.$border;
+  border-radius: admin.$radius;
+
+  background: admin.$surface;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 5%);
+}
+
+.admin-detail-item dt {
+  color: admin.$muted;
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.admin-detail-item dd {
+  margin: .375rem 0 0;
+  color: admin.$text;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* Free text needs the full width of the grid, not one auto-fit column. */
+.admin-detail-item--wide {
+  grid-column: 1 / -1;
+}
+
+.admin-detail-item__text {
+  font-weight: 400;
+  line-height: 1.6;
+
+  /* Administrators type plain text, so honour their line breaks. */
+  white-space: pre-line;
+}
+
+/* ---- Form -------------------------------------------------------------- */
+
+.admin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+
+  max-width: 720px;
+  padding: 1.5rem;
+
+  border: 1px solid admin.$border;
+  border-radius: admin.$radius;
+
+  background: admin.$surface;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 5%);
+}
+
+.admin-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: .375rem;
+}
+
+.admin-form__field label {
+  color: admin.$text-soft;
+  font-size: .85rem;
+  font-weight: 600;
+}
+
+.admin-form__field input,
+.admin-form__field select,
+.admin-form__field textarea {
+  width: 100%;
+  min-height: 42px;
+  padding: .5rem .75rem;
+
+  border: 1px solid #dbe2ea;
+  border-radius: admin.$radius-sm;
+
+  background: admin.$surface;
+  color: admin.$text;
+
+  font: inherit;
+  font-size: .95rem;
+}
+
+.admin-form__field textarea {
+  min-height: 7rem;
+  padding-top: .625rem;
+
+  line-height: 1.6;
+  resize: vertical;
+}
+
+/* Pairs a numeric input with the unit it is measured in. */
+.admin-form__with-unit {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.admin-form__with-unit input {
+  /* Room for the unit, so long sums never run underneath it. */
+  padding-right: 3.5rem;
+}
+
+.admin-form__unit {
+  position: absolute;
+  right: .75rem;
+
+  color: admin.$muted;
+
+  font-size: .8125rem;
+  font-weight: 700;
+  letter-spacing: .03em;
+
+  pointer-events: none;
+}
+
+.admin-form__field input:focus-visible,
+.admin-form__field select:focus-visible,
+.admin-form__field textarea:focus-visible {
+  outline: 3px solid rgb(37 99 235 / 35%);
+  outline-offset: 1px;
+  border-color: admin.$primary;
+}
+
+.admin-form__field input[aria-invalid='true'],
+.admin-form__field select[aria-invalid='true'] {
+  border-color: #fca5a5;
+}
+
+.admin-form__field input:disabled,
+.admin-form__field select:disabled {
+  background: admin.$surface-muted;
+  color: admin.$muted;
+}
+
+.admin-form__row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.admin-form__message {
+  margin: 0;
+  color: admin.$danger;
+  font-size: .8rem;
+  font-weight: 600;
+}
+
+.admin-form__checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: .625rem;
+}
+
+.admin-form__checkbox input {
+  width: 18px;
+  height: 18px;
+  margin-top: .15rem;
+  accent-color: admin.$primary;
+}
+
+.admin-form__checkbox label {
+  color: admin.$text-soft;
+  font-size: .9rem;
+  font-weight: 600;
+}
+
+/* Displays a server-derived value in the shape of an input, without
+   pretending to be editable. */
+.admin-form__readonly {
+  display: flex;
+  align-items: center;
+
+  width: 100%;
+  min-height: 42px;
+  padding: .5rem .75rem;
+
+  border: 1px dashed #dbe2ea;
+  border-radius: admin.$radius-sm;
+
+  background: admin.$surface-muted;
+  color: admin.$text-soft;
+
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-form__hint {
+  display: block;
+  margin-top: .15rem;
+  color: admin.$muted;
+  font-size: .8rem;
+  font-weight: 400;
+}
+
+.admin-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: .75rem;
+
+  padding-top: .25rem;
+}
+
+/* ---- Page-level modifiers --------------------------------------------- */
+
+.admin-page__banner {
+  margin-bottom: 1.5rem;
+}
+
+/* Header variant for pages whose title has no action button beside it. */
+.admin-page-header--stacked {
+  display: block;
+  margin-bottom: 1.5rem;
+}
+
+.admin-page-header__status {
+  margin: .75rem 0 0;
+}
+
+.admin-page-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem;
+}
+
+.admin-state__action {
+  margin-top: 1.25rem;
+}
+
+/* Form pages keep their panels aligned with the form width. */
+.admin-state--form,
+.admin-banner--form {
+  max-width: 720px;
+}
+
+.admin-state--form {
+  min-height: 240px;
+}
+
+.admin-btn .admin-spinner {
+  font-size: 1.15rem;
+}
+
+@media (max-width: 768px) {
+
+  .admin-page {
+    padding: 1rem;
+  }
+
+  .admin-page-header__actions {
+    width: 100%;
+  }
+
+  .admin-page-header__actions .admin-btn {
+    flex: 1 1 auto;
+  }
+
+  .admin-page-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .admin-page-header .admin-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+
+  .admin-form__row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-form__actions {
+    flex-direction: column-reverse;
+  }
+
+  .admin-form__actions .admin-btn {
+    width: 100%;
+  }
 }

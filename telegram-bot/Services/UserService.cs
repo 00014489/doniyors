@@ -1,121 +1,132 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
-using telegram_bot.DAL.Entities;
-using telegram_bot.DAL.Repositories.Sessions;
+using Doniyors.Data;
+using Doniyors.Data.Entities;
 using telegram_bot.DAL.Repositories.Users;
-using telegram_bot.Helpers;
 
 namespace telegram_bot.Services
 {
     public class UserService
     {
         private readonly IUserRepository _repo;
-        private readonly ILogger<UserService> _logger;
         private readonly SessionService _sessionService;
+        private readonly TimeProvider _timeProvider;
+        private readonly ILogger<UserService> _logger;
 
-        public UserService(IUserRepository repo, SessionService sessionService, ILogger<UserService> logger)
+        public UserService(
+            IUserRepository repo,
+            SessionService sessionService,
+            TimeProvider timeProvider,
+            ILogger<UserService> logger)
         {
             _repo = repo;
             _sessionService = sessionService;
+            _timeProvider = timeProvider;
             _logger = logger;
         }
 
-        public async Task<User> CreateOrUpdateUserAsync(long tgUserId, string userName, string languageCode)
+        /// <summary>
+        /// Registers the member on first contact, or brings their stored
+        /// details back in line with Telegram. The rule itself lives in
+        /// <see cref="UserProvisioning"/>, shared with the API, so both sides
+        /// of the product store the same thing for the same person.
+        /// </summary>
+        public async Task<User> CreateOrUpdateUserAsync(
+            TelegramProfile profile,
+            CancellationToken cancellationToken = default)
         {
-            var user = await _repo.GetByTgUserIdAsync(tgUserId);
+            var now = _timeProvider.GetUtcNow();
+
+            var user = await _repo.GetByTgUserIdAsync(profile.TgUserId, cancellationToken);
 
             if (user is not null)
             {
-                var isUpdated = false;
-
-                if (user.UserName != userName)
+                if (UserProvisioning.Apply(user, profile, now))
                 {
+                    await _repo.SaveChangesAsync(cancellationToken);
+
                     _logger.LogInformation(
-                        "Username updated. TgUserId={TgUserId}, OldUserName={OldUserName}, NewUserName={NewUserName}",
-                        tgUserId,
-                        user.UserName,
-                        userName);
-
-                    user.UserName = userName;
-                    isUpdated = true;
+                        "Refreshed profile from Telegram. TgUserId={TgUserId}",
+                        profile.TgUserId);
                 }
 
-                if (!string.IsNullOrWhiteSpace(languageCode) && user.LanguageCode != languageCode)
-                {
-                    _logger.LogInformation(
-                        "Language updated. TgUserId={TgUserId}, OldLanguage={OldLanguage}, NewLanguage={NewLanguage}",
-                        tgUserId,
-                        string.IsNullOrEmpty(user.LanguageCode) ? "empty" : user.LanguageCode,
-                        languageCode);
-
-                    user.LanguageCode = languageCode;
-                    isUpdated = true;
-                }
-
-                if (isUpdated)
-                {
-                    user.UpdatedAt = DateTimeOffset.UtcNow;
-                    await _repo.SaveChangesAsync();
-                }
+                // A member who talked to the bot before the Mini App existed
+                // may have no session row yet.
+                await _sessionService.GetOrCreateSessionAsync(profile.TgUserId, cancellationToken);
 
                 return user;
             }
 
-            var newUser = new User
-            {
-                TgUserId = tgUserId,
-                UserName = userName,
-                QrToken = TokenGenerator.Generate(),
-                TypeUserId = 3,
-                Points = 0,
-                RegisteredAt = DateTimeOffset.UtcNow,
-                UpdatedAt = DateTimeOffset.UtcNow,
-                LanguageCode = string.IsNullOrWhiteSpace(languageCode) ? string.Empty : languageCode
-            };
+            var created = UserProvisioning.Create(profile, now);
 
-            
-            await _repo.AddAsync(newUser);
-            await _repo.SaveChangesAsync();
+            await _repo.AddAsync(created, cancellationToken);
+            await _repo.SaveChangesAsync(cancellationToken);
+
             _logger.LogInformation(
-                "User created successfully. TgUserId={TgUserId}, UserName={UserName}, LanguageCode={LanguageCode}",
-                tgUserId,
-                userName,
-                string.IsNullOrEmpty(newUser.LanguageCode) ? "empty" : newUser.LanguageCode);
-            await _sessionService.GetOrCreateSessionAsync(tgUserId);
-            return newUser;
+                "User created. TgUserId={TgUserId}, UserName={UserName}",
+                created.TgUserId,
+                string.IsNullOrEmpty(created.UserName) ? "<none>" : created.UserName);
+
+            await _sessionService.GetOrCreateSessionAsync(profile.TgUserId, cancellationToken);
+
+            return created;
         }
-        
-        public async Task UpdateLanguage(long tgUserId, string languageCode)
+
+        /// <summary>
+        /// The member's own choice from the language menu. This is the only
+        /// thing that may change a language already set — Telegram's client
+        /// locale never overrides it.
+        /// </summary>
+        public async Task UpdateLanguage(
+            long tgUserId,
+            string languageCode,
+            CancellationToken cancellationToken = default)
         {
-            var user = await _repo.GetByTgUserIdAsync(tgUserId);
+            // The column is shared with the Mini App and the admin panel, which
+            // can only show supported languages.
+            if (!SupportedLanguages.IsSupported(languageCode))
+            {
+                _logger.LogWarning(
+                    "Refused an unsupported language. TgUserId={TgUserId}, LanguageCode={LanguageCode}",
+                    tgUserId,
+                    languageCode);
+
+                return;
+            }
+
+            var user = await _repo.GetByTgUserIdAsync(tgUserId, cancellationToken);
+
             if (user is null)
             {
                 _logger.LogWarning("User not found. TgUserId={TgUserId}", tgUserId);
+
                 return;
             }
 
             if (user.LanguageCode == languageCode)
-            {
-                _logger.LogInformation("Language is already set to the same value. TgUserId={TgUserId}, LanguageCode={LanguageCode}", tgUserId, languageCode);
                 return;
-            }
 
-            await _repo.UpdateLanguageAsync(tgUserId, languageCode);
-            _logger.LogInformation("Language updated successfully. TgUserId={TgUserId}, NewLanguageCode={NewLanguageCode}", tgUserId, languageCode);
+            await _repo.UpdateLanguageAsync(tgUserId, languageCode, cancellationToken);
+
+            _logger.LogInformation(
+                "Language updated. TgUserId={TgUserId}, NewLanguageCode={NewLanguageCode}",
+                tgUserId,
+                languageCode);
         }
 
-        public async Task<bool> IsAdminAsync(long tgUserId)
+        /// <summary>Anything other than the plain member role may scan QR codes.</summary>
+        public async Task<bool> IsAdminAsync(
+            long tgUserId,
+            CancellationToken cancellationToken = default)
         {
-            return await _repo.GetUserTypeAsync(tgUserId) != 3;
+            var roleId = await _repo.GetUserTypeAsync(tgUserId, cancellationToken);
+
+            return roleId != 0 && roleId != UserProvisioning.MemberRoleId;
         }
 
-        public async Task<User?> GetUserByTgIdAsync(long tgUserId)
+        public Task<User?> GetUserByTgIdAsync(
+            long tgUserId,
+            CancellationToken cancellationToken = default)
         {
-            return await _repo.GetByTgUserIdAsync(tgUserId);
+            return _repo.GetByTgUserIdAsync(tgUserId, cancellationToken);
         }
-        
     }
 }

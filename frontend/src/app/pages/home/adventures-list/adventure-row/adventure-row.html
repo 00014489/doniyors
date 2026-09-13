@@ -1,17 +1,40 @@
-<div class="card">
-  <img
-    class="image"
-    [src]="adventure().image"
-    [alt]="adventure().title"
-  />
+<button
+  type="button"
+  class="card"
+  (click)="activate()">
 
-  <div class="body">
-    <h3>{{ adventure().title }}</h3>
-
-    <p>{{ adventure().date }}</p>
-
-    <span class="reward">
-      +{{ adventure().reward }} pts
+  @if (imageUrl(); as url) {
+    <!-- Decorative: the title is already the card's text, so an alt would
+         make screen readers announce it twice. -->
+    <img
+      class="image"
+      [src]="url"
+      alt=""
+      loading="lazy" />
+  } @else {
+    <span class="image image--empty" aria-hidden="true">
+      <span class="material-symbols-rounded">hiking</span>
     </span>
-  </div>
-</div>
+  }
+
+  <span class="body">
+
+    <span class="title">{{ adventure().title }}</span>
+
+    <span class="date">
+      {{ adventure().travelDate | localDate: 'd MMM y' }}
+    </span>
+
+    <!-- No "upcoming" badge here: the list groups cards under Upcoming and
+         Past headings, so a per-card badge would repeat what the heading
+         above it already says. The detail page, which has no heading, keeps
+         its own badge. -->
+    <span class="reward">+{{ adventure().points }} {{ 'home.pts' | translate }}</span>
+
+  </span>
+
+  <span class="chevron material-symbols-rounded" aria-hidden="true">
+    chevron_right
+  </span>
+
+</button>

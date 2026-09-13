@@ -1,0 +1,189 @@
+<section class="admin-page">
+
+  <nav class="admin-breadcrumb" [attr.aria-label]="'admin.common.breadcrumb' | translate">
+    <a routerLink="/transactions">{{ 'admin.transactions.title' | translate }}</a>
+
+    <span class="material-symbols-rounded" aria-hidden="true">
+      chevron_right
+    </span>
+
+    <span aria-current="page">{{ 'admin.common.details' | translate }}</span>
+  </nav>
+
+  @if (isLoading()) {
+    <div class="admin-state" role="status" aria-live="polite">
+
+      <span
+        class="material-symbols-rounded admin-spinner"
+        aria-hidden="true">
+        progress_activity
+      </span>
+
+      <p>{{ 'admin.transactions.loadingOne' | translate }}</p>
+    </div>
+  }
+
+  @if (errorMessage(); as error) {
+    <div class="admin-banner admin-page__banner" role="alert">
+
+      <span class="material-symbols-rounded" aria-hidden="true">
+        error
+      </span>
+
+      <div>
+        <strong>{{ 'admin.common.somethingWrong' | translate }}</strong>
+        <p>{{ error | translate }}</p>
+      </div>
+
+      <button type="button" class="admin-btn" (click)="goToList()">
+        {{ 'admin.transactions.backToList' | translate }}
+      </button>
+    </div>
+  }
+
+  @if (!isLoading() && !errorMessage()) {
+
+    @if (transaction(); as transaction) {
+
+      @if (deleteError(); as error) {
+        <div class="admin-banner admin-page__banner" role="alert">
+
+          <span class="material-symbols-rounded" aria-hidden="true">
+            error
+          </span>
+
+          <div>
+            <strong>{{ 'admin.common.somethingWrong' | translate }}</strong>
+            <p>{{ error | translate }}</p>
+          </div>
+        </div>
+      }
+
+      <header class="admin-page-header">
+
+        <div>
+          <p class="admin-eyebrow">{{ 'admin.transactions.eyebrow' | translate: { id: transaction.id } }}</p>
+
+          <h1>
+            @if (transaction.travelId !== null) {
+              {{ transaction.travelTitle }}
+            } @else {
+              {{ 'admin.common.manualAdjustment' | translate }}
+            }
+          </h1>
+
+          <p
+            class="admin-status admin-page-header__status"
+            [class.is-active]="transaction.status"
+            [class.is-disabled]="!transaction.status">
+            {{ (transaction.status ? 'admin.common.active' : 'admin.common.voided') | translate }}
+          </p>
+        </div>
+
+        <div class="admin-page-header__actions">
+
+          <button
+            type="button"
+            class="admin-btn admin-btn--secondary"
+            (click)="goBack()">
+
+            <span class="material-symbols-rounded" aria-hidden="true">
+              arrow_back
+            </span>
+
+            <span>{{ 'admin.common.back' | translate }}</span>
+          </button>
+
+          <a
+            class="admin-btn admin-btn--primary"
+            [routerLink]="['/transactions', transaction.id, 'edit']"
+            [attr.aria-label]="'admin.transactions.editItem' | translate: { id: transaction.id }">
+
+            <span class="material-symbols-rounded" aria-hidden="true">
+              edit
+            </span>
+
+            <span>{{ 'admin.common.edit' | translate }}</span>
+          </a>
+
+          <button
+            type="button"
+            class="admin-btn admin-btn--danger"
+            [disabled]="!transaction.status"
+            [attr.aria-label]="
+              (transaction.status ? 'admin.transactions.deleteItem' : 'admin.transactions.alreadyVoidedItem')
+                | translate: { id: transaction.id }
+            "
+            (click)="askDelete()">
+
+            <span class="material-symbols-rounded" aria-hidden="true">
+              delete
+            </span>
+
+            <span>{{ 'admin.common.delete' | translate }}</span>
+          </button>
+
+        </div>
+
+      </header>
+
+      <dl class="admin-detail-grid">
+
+        <div class="admin-detail-item">
+          <dt>{{ 'admin.transactions.colUser' | translate }}</dt>
+          <dd>{{ transaction.userName }}</dd>
+        </div>
+
+        <div class="admin-detail-item">
+          <dt>{{ 'admin.common.telegramId' | translate }}</dt>
+          <dd>{{ transaction.tgUserId }}</dd>
+        </div>
+
+        <div class="admin-detail-item">
+          <dt>{{ 'admin.transactions.colAdventure' | translate }}</dt>
+          <dd>
+            @if (transaction.travelId !== null) {
+              {{ transaction.travelTitle }}
+            } @else {
+              {{ 'admin.transactions.noneManual' | translate }}
+            }
+          </dd>
+        </div>
+
+        <div class="admin-detail-item">
+          <dt>{{ 'admin.common.points' | translate }}</dt>
+          <dd
+            class="detail__points"
+            [class.is-credit]="transaction.points > 0"
+            [class.is-debit]="transaction.points < 0">
+            {{ transaction.points > 0 ? '+' : '' }}{{ transaction.points }}
+          </dd>
+        </div>
+
+        <div class="admin-detail-item">
+          <dt>{{ 'admin.common.created' | translate }}</dt>
+          <dd>{{ transaction.createdAt | localDate: 'dd MMM yyyy, HH:mm' }}</dd>
+        </div>
+
+        <div class="admin-detail-item">
+          <dt>{{ 'admin.common.status' | translate }}</dt>
+          <dd>{{ (transaction.status ? 'admin.common.active' : 'admin.common.voided') | translate }}</dd>
+        </div>
+
+      </dl>
+
+      <app-confirm-dialog
+        [open]="confirmOpen()"
+        [heading]="'admin.transactions.deleteHeading' | translate"
+        [message]="'admin.transactions.deleteMessage' | translate: { id: transaction.id }"
+        [confirmLabel]="'admin.common.yes' | translate"
+        [cancelLabel]="'admin.common.cancel' | translate"
+        [busy]="isDeleting()"
+        (confirmed)="confirmDelete()"
+        (cancelled)="cancelDelete()" />
+
+    }
+
+  }
+
+</section>

@@ -1,0 +1,22 @@
+:host {
+  display: block;
+}
+
+/* Widened so every column stays readable before the wrapper scrolls. */
+.transactions__table {
+  min-width: 1040px;
+}
+
+/* Signed amount: green when it credits the balance, red when it debits it. */
+.transactions__points {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.transactions__points.is-credit {
+  color: #166534;
+}
+
+.transactions__points.is-debit {
+  color: #b91c1c;
+}

@@ -1,28 +1,41 @@
-<div class="page">
+@if (openedAdventureId(); as adventureId) {
+
+  <main class="page page--detail">
+    @defer (on immediate) {
+      <app-adventure-detail
+        [adventureId]="adventureId"
+        (close)="closeAdventure()" />
+    }
+  </main>
+
+} @else {
+
+  <main class="page">
 
     @switch (activeTab()) {
 
-        @case ('home') {
-            <app-home />
-        }
+      @case ('home') {
+        <app-home (openAdventure)="openAdventure($event)" />
+      }
 
-        @case ('qr') {
-            <app-qr-code />
-            <div class="mobile-layout">
-                <h1>{{ 'nav.qrCode' | translate }}</h1>
-            </div>
+      @case ('qr') {
+        @defer (on immediate) {
+          <app-qr-code />
         }
+      }
 
-        @case ('profile') {
-            <div class="mobile-layout">
-                <h1>{{ 'nav.profile' | translate }}</h1>
-            </div>
+      @case ('profile') {
+        @defer (on immediate) {
+          <app-profile (open)="openAdventure($event)" />
         }
+      }
 
     }
 
-</div>
+  </main>
 
-<app-mobile-nav
-    [active]="activeTab()"
-    (activeChange)="setTab($event)" />
+  <!-- The nav is not rendered while a detail is open, so a tab change never
+       has a detail to pop. -->
+  <app-mobile-nav [(active)]="activeTab" />
+
+}

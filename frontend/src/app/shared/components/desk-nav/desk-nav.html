@@ -7,20 +7,21 @@
       type="button"
       class="sidebar__toggle"
       (click)="toggle()"
-      [attr.aria-label]="collapsed() ? 'Expand navigation' : 'Collapse navigation'">
+      [attr.aria-expanded]="!collapsed()"
+      [attr.aria-label]="(collapsed() ? 'admin.nav.expand' : 'admin.nav.collapse') | translate">
 
-      <span class="material-symbols-rounded">
+      <span class="material-symbols-rounded" aria-hidden="true">
         menu
       </span>
 
     </button>
 
     @if (!collapsed()) {
-      <h1>Admin Panel</h1>
+      <h1>{{ 'admin.nav.panel' | translate }}</h1>
     }
   </header>
 
-  <nav aria-label="Primary navigation">
+  <nav [attr.aria-label]="'admin.nav.primary' | translate">
     <ul class="sidebar__nav">
 
       @for (item of items(); track item.route) {
@@ -30,14 +31,16 @@
           <a
             [routerLink]="item.route"
             routerLinkActive="active"
-            [routerLinkActiveOptions]="{ exact: true }">
+            ariaCurrentWhenActive="page"
+            [attr.aria-label]="collapsed() ? (item.label | translate) : null"
+            [attr.title]="collapsed() ? (item.label | translate) : null">
 
-            <span class="material-symbols-rounded">
+            <span class="material-symbols-rounded" aria-hidden="true">
               {{ item.icon }}
             </span>
 
             @if (!collapsed()) {
-              <span>{{ item.label }}</span>
+              <span>{{ item.label | translate }}</span>
             }
 
           </a>
@@ -48,21 +51,5 @@
 
     </ul>
   </nav>
-
-  <footer class="sidebar__footer">
-
-    <button type="button">
-
-      <span class="material-symbols-rounded">
-        logout
-      </span>
-
-      @if (!collapsed()) {
-        <span>Logout</span>
-      }
-
-    </button>
-
-  </footer>
 
 </aside>

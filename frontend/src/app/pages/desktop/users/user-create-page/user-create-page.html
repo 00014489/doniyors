@@ -1,0 +1,30 @@
+<section class="admin-page">
+
+  <nav class="admin-breadcrumb" [attr.aria-label]="'admin.common.breadcrumb' | translate">
+    <a routerLink="/users">{{ 'admin.users.title' | translate }}</a>
+
+    <span class="material-symbols-rounded" aria-hidden="true">
+      chevron_right
+    </span>
+
+    <span aria-current="page">{{ 'admin.common.new' | translate }}</span>
+  </nav>
+
+  <header class="admin-page-header admin-page-header--stacked">
+    <p class="admin-eyebrow">{{ 'admin.common.management' | translate }}</p>
+
+    <h1>{{ 'admin.users.createTitle' | translate }}</h1>
+
+    <p class="admin-page-header__description">
+      {{ 'admin.users.createDescription' | translate }}
+    </p>
+  </header>
+
+  <app-user-form
+    [saving]="isSaving()"
+    [errorMessage]="saveError()"
+    [submitLabel]="'admin.users.createSubmit' | translate"
+    (save)="save($event)"
+    (cancel)="cancel()" />
+
+</section>

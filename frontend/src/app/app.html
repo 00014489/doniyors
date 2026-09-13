@@ -15,32 +15,42 @@
         alt="" />
 
       <span class="visually-hidden">
-        Loading…
+        {{ 'app.loading' | translate }}
       </span>
 
     </div>
 
   } @else {
 
-    @if (authError()) {
+    @if (authFailed()) {
       <div class="auth-error-banner" role="alert">
-        <p>{{ authError() }}</p>
+        <p>{{ 'app.signInFailed' | translate }}</p>
       </div>
     }
 
     @switch (tg.deviceType()) {
 
+      <!-- Each shell is its own lazy chunk: a member never downloads the admin
+           panel, and an administrator on desktop never downloads the member tabs. -->
       @case ('mobile') {
-        <app-mobile-component />
+        @defer (on immediate) {
+          <app-mobile-component />
+        }
       }
 
       @case ('desktop') {
 
-        <!-- @if (auth.isAdmin()) { -->
-          <app-desktop-component />
-        <!-- } @else { -->
-          <!-- <app-mobile-component /> -->
-        <!-- } -->
+        @if (auth.isAdmin()) {
+          @defer (on immediate) {
+            <app-desktop-component />
+          }
+        } @else {
+          <!-- An ordinary account on desktop gets the member experience, not
+               an admin panel whose every request would come back 403. -->
+          @defer (on immediate) {
+            <app-mobile-component />
+          }
+        }
       }
     }
   }
@@ -48,7 +58,7 @@
 } @else {
 
   <div class="unsupported-screen" role="alert">
-    <p>{{ tg.unsupportedReason() }}</p>
+    <p>{{ 'app.openFromTelegram' | translate }}</p>
   </div>
 
 }

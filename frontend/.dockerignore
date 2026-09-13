@@ -1,0 +1,11 @@
+# The image runs `npm ci` itself. Copying a local node_modules over it would
+# replace Alpine's (musl) native binaries with the host's, and upload hundreds
+# of megabytes to the Docker daemon on every build.
+node_modules
+dist
+out-tsc
+coverage
+.angular
+.vscode
+.idea
+*.log

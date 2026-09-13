@@ -1,8 +1,9 @@
-import { Component, computed, inject, signal } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
-
+import { Component, signal } from '@angular/core';
+import { RouterLink, RouterLinkActive } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 
 interface NavItem {
+  /** Translation key. */
   readonly label: string;
   readonly icon: string;
   readonly route: string;
@@ -10,56 +11,32 @@ interface NavItem {
 
 @Component({
   selector: 'app-desk-nav',
-  imports: [RouterLink, RouterLinkActive],
+  imports: [RouterLink, RouterLinkActive, TranslatePipe],
   templateUrl: './desk-nav.html',
   styleUrl: './desk-nav.scss',
 })
 export class DeskNav {
-  private readonly router = inject(Router);
-
   readonly collapsed = signal(false);
 
   readonly items = signal<readonly NavItem[]>([
     {
-      label: 'Dashboard',
-      icon: 'dashboard',
-      route: '/dashboard',
-    },
-    {
-      label: 'Users',
-      icon: 'group',
-      route: '/users',
-    },
-    {
-      label: 'Adventures',
+      label: 'admin.nav.adventures',
       icon: 'hiking',
       route: '/adventures',
     },
     {
-      label: 'Participations',
-      icon: 'event_available',
-      route: '/participations',
+      label: 'admin.nav.users',
+      icon: 'group',
+      route: '/users',
     },
     {
-      label: 'Rewards',
-      icon: 'stars',
-      route: '/rewards',
-    },
-    {
-      label: 'Reports',
-      icon: 'bar_chart',
-      route: '/reports',
-    },
-    {
-      label: 'Settings',
-      icon: 'settings',
-      route: '/settings',
+      label: 'admin.nav.transactions',
+      icon: 'receipt_long',
+      route: '/transactions',
     },
   ]);
 
-  readonly currentUrl = computed(() => this.router.url);
-
   toggle(): void {
-    this.collapsed.update(value => !value);
+    this.collapsed.update((value) => !value);
   }
 }

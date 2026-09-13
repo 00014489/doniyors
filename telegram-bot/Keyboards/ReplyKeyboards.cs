@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 using telegram_bot.Services;
@@ -21,12 +20,15 @@ namespace telegram_bot.Keyboards
             _localizationService = localizationService;
         }
 
-        public async Task<ReplyKeyboardMarkup> MainMenu(long userId, string langCode)
+        public async Task<ReplyKeyboardMarkup> MainMenu(
+            long userId,
+            string langCode,
+            CancellationToken cancellationToken = default)
         {
 
             var buttons = new List<KeyboardButton[]>();
 
-            if (await _userService.IsAdminAsync(userId))
+            if (await _userService.IsAdminAsync(userId, cancellationToken))
             {
                 buttons.Add(new[]
                 {
@@ -51,6 +53,21 @@ namespace telegram_bot.Keyboards
         public static ReplyKeyboardRemove Remove()
         {
             return new ReplyKeyboardRemove();
+        }
+
+        /// <summary>A lone Cancel button, for flows that wait on something other than text.</summary>
+        public ReplyKeyboardMarkup Cancel(string langCode)
+        {
+            return new ReplyKeyboardMarkup(new[]
+            {
+                new[]
+                {
+                    new KeyboardButton(_localizationService.Get(langCode, "cancel"))
+                }
+            })
+            {
+                ResizeKeyboard = true
+            };
         }
 
         public ReplyKeyboardMarkup SelectLanguage(Dictionary<string, string> fullNames, string? langCode = null)

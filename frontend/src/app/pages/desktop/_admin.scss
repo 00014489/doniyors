@@ -1,0 +1,85 @@
+// ==========================================================
+// Shared design primitives for the desktop admin pages.
+// Palette and layout mixins. The shared chrome built on top of
+// these tokens (buttons, banners, state panels) lives in the global
+// stylesheet as `.admin-*` classes so it is defined only once.
+// ==========================================================
+
+$bg: #f8fafc;
+$surface: #ffffff;
+$surface-muted: #f1f5f9;
+$border: #e2e8f0;
+$border-strong: #cbd5e1;
+
+$text: #0f172a;
+$text-soft: #334155;
+$muted: #64748b;
+
+$primary: #2563eb;
+$primary-dark: #1d4ed8;
+$primary-soft: #eff6ff;
+
+$danger: #b91c1c;
+$danger-border: #fecaca;
+$danger-soft: #fef2f2;
+
+$success: #166534;
+$success-soft: #f0fdf4;
+$success-border: #bbf7d0;
+
+$radius: 0.875rem;
+$radius-sm: 0.625rem;
+
+@mixin page {
+  min-height: 100%;
+  padding: 2rem;
+  background: $bg;
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
+}
+
+@mixin card {
+  border: 1px solid $border;
+  border-radius: $radius;
+  background: $surface;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 5%);
+}
+
+@mixin eyebrow {
+  margin: 0 0 0.25rem;
+  color: $primary;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@mixin status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+
+  padding: 0.25rem 0.625rem;
+
+  border: 1px solid transparent;
+  border-radius: 999px;
+
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+
+  &.is-active {
+    background: $success-soft;
+    border-color: $success-border;
+    color: $success;
+  }
+
+  &.is-disabled {
+    background: $danger-soft;
+    border-color: $danger-border;
+    color: $danger;
+  }
+}

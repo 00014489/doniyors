@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using backend.DAL;
+using Doniyors.Data;
 
 #nullable disable
 
@@ -25,7 +25,7 @@ namespace backend.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("backend.DAL.Entities.Transaction", b =>
+            modelBuilder.Entity("Doniyors.Data.Entities.Transaction", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -53,7 +53,7 @@ namespace backend.Migrations
                     b.ToTable("Transactions", (string)null);
                 });
 
-            modelBuilder.Entity("backend.DAL.Entities.Travel", b =>
+            modelBuilder.Entity("Doniyors.Data.Entities.Travel", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -85,7 +85,7 @@ namespace backend.Migrations
                     b.ToTable("Travels", (string)null);
                 });
 
-            modelBuilder.Entity("backend.DAL.Entities.TravelImage", b =>
+            modelBuilder.Entity("Doniyors.Data.Entities.TravelImage", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -118,7 +118,7 @@ namespace backend.Migrations
                     b.ToTable("TravelImages", (string)null);
                 });
 
-            modelBuilder.Entity("backend.DAL.Entities.TypeUser", b =>
+            modelBuilder.Entity("Doniyors.Data.Entities.TypeUser", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -164,7 +164,7 @@ namespace backend.Migrations
                         });
                 });
 
-            modelBuilder.Entity("backend.DAL.Entities.User", b =>
+            modelBuilder.Entity("Doniyors.Data.Entities.User", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -222,7 +222,7 @@ namespace backend.Migrations
                     b.ToTable("Users", (string)null);
                 });
 
-            modelBuilder.Entity("backend.DAL.Entities.UserSession", b =>
+            modelBuilder.Entity("Doniyors.Data.Entities.UserSession", b =>
                 {
                     b.Property<long>("UserId")
                         .HasColumnType("bigint");
@@ -246,15 +246,15 @@ namespace backend.Migrations
                     b.ToTable("UserSessions", (string)null);
                 });
 
-            modelBuilder.Entity("backend.DAL.Entities.Transaction", b =>
+            modelBuilder.Entity("Doniyors.Data.Entities.Transaction", b =>
                 {
-                    b.HasOne("backend.DAL.Entities.Travel", "Travel")
+                    b.HasOne("Doniyors.Data.Entities.Travel", "Travel")
                         .WithMany("Transactions")
                         .HasForeignKey("TravelId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("backend.DAL.Entities.User", "User")
+                    b.HasOne("Doniyors.Data.Entities.User", "User")
                         .WithMany("Transactions")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -265,9 +265,9 @@ namespace backend.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("backend.DAL.Entities.TravelImage", b =>
+            modelBuilder.Entity("Doniyors.Data.Entities.TravelImage", b =>
                 {
-                    b.HasOne("backend.DAL.Entities.Travel", "Travel")
+                    b.HasOne("Doniyors.Data.Entities.Travel", "Travel")
                         .WithMany("Images")
                         .HasForeignKey("TravelId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -276,9 +276,9 @@ namespace backend.Migrations
                     b.Navigation("Travel");
                 });
 
-            modelBuilder.Entity("backend.DAL.Entities.User", b =>
+            modelBuilder.Entity("Doniyors.Data.Entities.User", b =>
                 {
-                    b.HasOne("backend.DAL.Entities.TypeUser", "TypeUser")
+                    b.HasOne("Doniyors.Data.Entities.TypeUser", "TypeUser")
                         .WithMany("Users")
                         .HasForeignKey("TypeUserId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -287,31 +287,31 @@ namespace backend.Migrations
                     b.Navigation("TypeUser");
                 });
 
-            modelBuilder.Entity("backend.DAL.Entities.UserSession", b =>
+            modelBuilder.Entity("Doniyors.Data.Entities.UserSession", b =>
                 {
-                    b.HasOne("backend.DAL.Entities.User", "User")
+                    b.HasOne("Doniyors.Data.Entities.User", "User")
                         .WithOne("Session")
-                        .HasForeignKey("backend.DAL.Entities.UserSession", "UserId")
-                        .HasPrincipalKey("backend.DAL.Entities.User", "TgUserId")
+                        .HasForeignKey("Doniyors.Data.Entities.UserSession", "UserId")
+                        .HasPrincipalKey("Doniyors.Data.Entities.User", "TgUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("backend.DAL.Entities.Travel", b =>
+            modelBuilder.Entity("Doniyors.Data.Entities.Travel", b =>
                 {
                     b.Navigation("Images");
 
                     b.Navigation("Transactions");
                 });
 
-            modelBuilder.Entity("backend.DAL.Entities.TypeUser", b =>
+            modelBuilder.Entity("Doniyors.Data.Entities.TypeUser", b =>
                 {
                     b.Navigation("Users");
                 });
 
-            modelBuilder.Entity("backend.DAL.Entities.User", b =>
+            modelBuilder.Entity("Doniyors.Data.Entities.User", b =>
                 {
                     b.Navigation("Session");
 

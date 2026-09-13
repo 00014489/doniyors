@@ -1,0 +1,109 @@
+<article class="detail">
+
+  @if (failed()) {
+
+    <div class="state" role="alert">
+      <p>{{ 'adventure.loadFailed' | translate }}</p>
+      <button type="button" class="retry" (click)="retry()">
+        {{ 'home.retry' | translate }}
+      </button>
+    </div>
+
+  } @else if (isLoading()) {
+
+    <div class="skeleton skeleton--gallery" aria-hidden="true"></div>
+    <div class="skeleton skeleton--line" aria-hidden="true"></div>
+    <div class="skeleton skeleton--line skeleton--short" aria-hidden="true"></div>
+
+  } @else if (adventure(); as adventure) {
+
+    @if (images().length) {
+
+      <div class="gallery">
+
+        <!-- A scrollable region must be reachable by keyboard; focused, the
+             arrow keys page through the pictures. -->
+        <div
+          class="gallery__strip"
+          role="region"
+          tabindex="0"
+          [attr.aria-label]="'adventure.gallery' | translate"
+          (scroll)="onGalleryScroll($event)">
+          @for (image of images(); track image.id) {
+            <img
+              class="gallery__image"
+              [src]="imageUrl(image.id)"
+              [alt]="adventure.title"
+              [attr.loading]="$first ? 'eager' : 'lazy'" />
+          }
+        </div>
+
+        @if (images().length > 1) {
+          <div class="gallery__dots" aria-hidden="true">
+            @for (image of images(); track image.id) {
+              <span class="dot" [class.dot--active]="$index === activeImage()"></span>
+            }
+          </div>
+        }
+
+      </div>
+
+    }
+
+    <div class="body">
+
+      <div class="heading">
+
+        <h1 #heading class="title" tabindex="-1">{{ adventure.title }}</h1>
+
+        @if (adventure.isUpcoming) {
+          <span class="badge">{{ 'home.upcoming' | translate }}</span>
+        }
+
+      </div>
+
+      @if (adventure.description) {
+        <p class="description">{{ adventure.description }}</p>
+      }
+
+      <dl class="facts">
+
+        <div class="fact">
+          <dt>
+            <span class="material-symbols-rounded" aria-hidden="true">event</span>
+            {{ 'adventure.date' | translate }}
+          </dt>
+          <dd>{{ adventure.travelDate | localDate: 'EEEE, d MMMM y' }}</dd>
+        </div>
+
+        <div class="fact">
+          <dt>
+            <span class="material-symbols-rounded" aria-hidden="true">schedule</span>
+            {{ 'adventure.time' | translate }}
+          </dt>
+          <dd>{{ adventure.travelDate | localDate: 'HH:mm' }}</dd>
+        </div>
+
+        <div class="fact">
+          <dt>
+            <span class="material-symbols-rounded" aria-hidden="true">payments</span>
+            {{ 'adventure.cost' | translate }}
+          </dt>
+          <dd>{{ adventure.cost | money }}</dd>
+        </div>
+
+        <div class="fact fact--reward">
+          <dt>
+            <span class="material-symbols-rounded" aria-hidden="true">stars</span>
+            {{ 'adventure.reward' | translate }}
+          </dt>
+          <dd>+{{ adventure.points }} {{ 'home.pts' | translate }}</dd>
+        </div>
+
+      </dl>
+
+    </div>
+
+  }
+
+</article>

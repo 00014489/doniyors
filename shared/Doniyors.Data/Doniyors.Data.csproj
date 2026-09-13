@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The database model, shared by the API and the Telegram bot.
+
+    Both services talk to the same PostgreSQL database. This project exists so
+    there is exactly one definition of every entity and of the mapping: a
+    hand-kept copy in each service drifts the moment one side adds a column,
+    and a mismatched model fails at runtime rather than at build time.
+
+    The API owns the schema and holds the migrations; this project holds only
+    the model they are generated from.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Doniyors.Data</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+  </ItemGroup>
+
+</Project>

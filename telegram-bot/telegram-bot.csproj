@@ -5,15 +5,33 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>telegram_bot</RootNamespace>
+    <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- No EF Core Design/Tools on purpose: the backend owns the schema and is
+         the only project that may generate or apply migrations. -->
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.10" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
-    <PackageReference Include="Scrutor" Version="7.0.0" />
     <PackageReference Include="Telegram.Bot" Version="22.10.1" />
+
+    <!-- Reading members' QR codes out of the photos an administrator sends.
+         SkiaSharp decodes the image and ZXing finds the codes. The
+         NoDependencies native build needs no system libraries (fontconfig),
+         so the stock aspnet image runs it without extra packages. -->
+    <PackageReference Include="SkiaSharp" Version="4.152.0" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.152.0" />
+    <PackageReference Include="ZXing.Net" Version="0.16.11" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The entities and the EF mapping, shared with the API. -->
+    <ProjectReference Include="../shared/Doniyors.Data/Doniyors.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Read at startup by LocalizationService. -->
+    <Content Update="language.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,66 @@
+<section class="admin-page">
+
+  <nav class="admin-breadcrumb" [attr.aria-label]="'admin.common.breadcrumb' | translate">
+    <a routerLink="/adventures">{{ 'admin.adventures.title' | translate }}</a>
+
+    <span class="material-symbols-rounded" aria-hidden="true">
+      chevron_right
+    </span>
+
+    <span aria-current="page">{{ 'admin.common.edit' | translate }}</span>
+  </nav>
+
+  <header class="admin-page-header admin-page-header--stacked">
+    <p class="admin-eyebrow">{{ 'admin.common.management' | translate }}</p>
+
+    <h1>{{ 'admin.adventures.editTitle' | translate }}</h1>
+
+    <p class="admin-page-header__description">
+      {{ 'admin.adventures.editDescription' | translate }}
+    </p>
+  </header>
+
+  @if (isLoading()) {
+    <div class="admin-state admin-state--form" role="status" aria-live="polite">
+
+      <span
+        class="material-symbols-rounded admin-spinner"
+        aria-hidden="true">
+        progress_activity
+      </span>
+
+      <p>{{ 'admin.adventures.loadingOne' | translate }}</p>
+    </div>
+  }
+
+  @if (loadError(); as error) {
+    <div class="admin-banner admin-banner--form" role="alert">
+
+      <span class="material-symbols-rounded" aria-hidden="true">
+        error
+      </span>
+
+      <div>
+        <strong>{{ 'admin.common.somethingWrong' | translate }}</strong>
+        <p>{{ error | translate }}</p>
+      </div>
+
+      <button type="button" class="admin-btn" (click)="goToList()">
+        {{ 'admin.adventures.backToList' | translate }}
+      </button>
+    </div>
+  }
+
+  @if (!isLoading() && !loadError() && adventure()) {
+
+    <app-adventure-form
+      [adventure]="adventure() ?? null"
+      [saving]="isSaving()"
+      [errorMessage]="saveError()"
+      [submitLabel]="'admin.common.saveChanges' | translate"
+      (save)="save($event)"
+      (cancel)="cancel()" />
+
+  }
+
+</section>

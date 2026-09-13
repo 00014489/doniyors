@@ -1,258 +1,158 @@
-# services:
+# Production stack.
+#
+#   cp .env.example .env     # fill in every empty value
+#   docker compose up -d --build
+#
+# See DEPLOY.md for the server prerequisites and day-to-day operations.
 
-#   postgres:
-#     image: postgres:17
-#     container_name: postgres
+name: doniyors
 
-#     restart: unless-stopped
 
-#     environment:
-#       TZ: ${TZ}
-#       POSTGRES_DB: ${POSTGRES_DB}
-#       POSTGRES_USER: ${POSTGRES_USER}
-#       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+# Docker keeps container logs forever by default, which eventually fills the
+# disk. Every service rotates at 5 x 10 MB.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
 
-#     volumes:
-#       - postgres_data:/var/lib/postgresql/data
+# The one connection string every .NET container uses. GSS encryption is off:
+# it is Kerberos, which this setup does not use, and trying it made every
+# connection log a missing libgssapi_krb5 error.
+x-database: &database
+  ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-MainDb};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env};GSS Encryption Mode=Disable"
 
-#     healthcheck:
-#       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-#       interval: 10s
-#       timeout: 5s
-#       retries: 10
-#       start_period: 20s
-
-#     networks:
-#       - telegram_network
-
-#   backend:
-#     container_name: backend
-
-#     build:
-#       context: ./backend
-#       dockerfile: Dockerfile
-
-#     restart: unless-stopped
-
-#     depends_on:
-#       postgres:
-#         condition: service_healthy
-
-#     environment:
-#       TZ: ${TZ}
-
-#       ASPNETCORE_ENVIRONMENT: Production
-#       ASPNETCORE_URLS: http://+:8080
-
-#       ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
-
-#       Jwt__Key: ${JWT_KEY}
-#       Jwt__Issuer: ${JWT_ISSUER}
-#       Jwt__Audience: ${JWT_AUDIENCE}
-
-#     expose:
-#       - "8080"
-
-#     networks:
-#       - telegram_network
-
-#   telegram-bot:
-#     container_name: telegram-bot
-
-#     build:
-#       context: ./telegram-bot
-#       dockerfile: Dockerfile
-
-#     restart: unless-stopped
-
-#     depends_on:
-#       postgres:
-#         condition: service_healthy
-
-#     environment:
-#       TZ: ${TZ}
-
-#       ASPNETCORE_ENVIRONMENT: Production
-#       ASPNETCORE_URLS: http://+:8081
-
-#       Telegram__BotToken: ${TELEGRAM_BOT_TOKEN}
-
-#       Webhook__BaseUrl: ${WEBHOOK_BASE_URL}
-#       Webhook__Secret: ${TELEGRAM_WEBHOOK_SECRET}
-
-#       ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
-
-#     expose:
-#       - "8081"
-
-#     networks:
-#       - telegram_network
-
-#   frontend:
-#     container_name: frontend
-
-#     build:
-#       context: ./frontend
-#       dockerfile: Dockerfile
-
-#     restart: unless-stopped
-
-#     expose:
-#       - "80"
-
-#     networks:
-#       - telegram_network
-
-#   nginx:
-#     container_name: nginx
-
-#     build:
-#       context: ./nginx
-#       dockerfile: Dockerfile
-
-#     restart: unless-stopped
-
-#     depends_on:
-#       - frontend
-#       - backend
-#       - telegram-bot
-
-#     ports:
-#       - "80:80"
-#       - "443:443"
-
-#     volumes:
-#       - ./ssl:/etc/nginx/certs:ro
-
-#     networks:
-#       - telegram_network
-
-# volumes:
-#   postgres_data:
-
-# networks:
-#   telegram_network:
-#     name: telegram-miniapp-network
-#     driver: bridge
 
 services:
 
   postgres:
     image: postgres:17
-    container_name: postgres
-
     restart: unless-stopped
 
     environment:
-      TZ: ${TZ}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      TZ: ${TZ:-UTC}
+      POSTGRES_DB: ${POSTGRES_DB:-MainDb}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 10s
+      # Over TCP on purpose: on first start the image runs a temporary,
+      # socket-only server to initialise the database, and a socket check
+      # would report "ready" before the real server is up.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
       timeout: 5s
-      retries: 10
-      start_period: 20s
+      retries: 30
+      start_period: 30s
 
-    networks:
-      - telegram_network
+    logging: *logging
+
+
+  # Applies the EF Core migrations, then exits. The API and the bot wait for
+  # it to succeed, so neither ever runs against an out-of-date schema.
+  migrate:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: migrations
+
+    restart: "no"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    environment:
+      <<: *database
+      TZ: ${TZ:-UTC}
+      ASPNETCORE_ENVIRONMENT: Production
+
+    logging: *logging
 
 
   backend:
-    container_name: backend
-
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      # Repo root: the image needs backend/ and shared/ together.
+      context: .
+      dockerfile: backend/Dockerfile
+      target: final
 
     restart: unless-stopped
 
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
 
     environment:
-      TZ: ${TZ}
-
+      <<: *database
+      TZ: ${TZ:-UTC}
       ASPNETCORE_ENVIRONMENT: Production
-      ASPNETCORE_URLS: http://+:8080
 
-      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      Jwt__Key: ${JWT_KEY:?Set JWT_KEY in .env (at least 32 characters)}
+      Jwt__Issuer: ${JWT_ISSUER:-MiniApp}
+      Jwt__Audience: ${JWT_AUDIENCE:-MiniApp}
+      Jwt__ExpiresMinutes: ${JWT_EXPIRES_MINUTES:-60}
 
-      Jwt__Key: ${JWT_KEY}
-      Jwt__Issuer: ${JWT_ISSUER}
-      Jwt__Audience: ${JWT_AUDIENCE}
-      Jwt__ExpiresMinutes: ${JWT_EXPIRES_MINUTES}
+      # Verifies the Mini App's signed initData — the same token as the bot.
+      Telegram__BotToken: ${TELEGRAM_BOT_TOKEN:?Set TELEGRAM_BOT_TOKEN in .env}
 
-      Telegram__BotToken: ${TELEGRAM_BOT_TOKEN}
+      # The Angular app is served from this same origin.
+      Cors__AllowedOrigins__0: https://${DOMAIN:?Set DOMAIN in .env}
 
-    expose:
-      - "8080"
+      # When a member's language changes here, the bot's menu button that
+      # opens this address is relabelled to match.
+      MiniApp__Url: https://${DOMAIN:?Set DOMAIN in .env}
 
-    networks:
-      - telegram_network
+    logging: *logging
 
 
   telegram-bot:
-    container_name: telegram-bot
-
     build:
-      context: ./telegram-bot
-      dockerfile: Dockerfile
+      # Repo root: the image needs telegram-bot/ and shared/ together.
+      context: .
+      dockerfile: telegram-bot/Dockerfile
 
     restart: unless-stopped
 
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
 
     environment:
-      TZ: ${TZ}
-
+      <<: *database
+      TZ: ${TZ:-UTC}
       ASPNETCORE_ENVIRONMENT: Production
-      ASPNETCORE_URLS: http://+:8081
 
-      Telegram__BotToken: ${TELEGRAM_BOT_TOKEN}
+      Telegram__BotToken: ${TELEGRAM_BOT_TOKEN:?Set TELEGRAM_BOT_TOKEN in .env}
 
-      Webhook__BaseUrl: ${WEBHOOK_BASE_URL}
-      Webhook__Secret: ${TELEGRAM_WEBHOOK_SECRET}
+      # nginx routes this path to the bot; see nginx/templates.
+      Webhook__BaseUrl: https://${DOMAIN:?Set DOMAIN in .env}/webhook
+      Webhook__Secret: ${TELEGRAM_WEBHOOK_SECRET:?Set TELEGRAM_WEBHOOK_SECRET in .env}
 
-      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      # The bot's menu button opens the Mini App here.
+      MiniApp__Url: https://${DOMAIN:?Set DOMAIN in .env}
+      MiniApp__MenuButtonText: ${MINI_APP_BUTTON_TEXT:-Open app}
 
-    expose:
-      - "8081"
-
-    networks:
-      - telegram_network
+    logging: *logging
 
 
   frontend:
-    container_name: frontend
-
     build:
       context: ./frontend
-      dockerfile: Dockerfile
 
     restart: unless-stopped
 
-    expose:
-      - "80"
-
-    networks:
-      - telegram_network
+    logging: *logging
 
 
+  # The only service reachable from outside. Terminates TLS and routes:
+  #   /          -> frontend      /api/   -> backend      /webhook -> telegram-bot
   nginx:
-    container_name: nginx
-
     build:
       context: ./nginx
-      dockerfile: Dockerfile
 
     restart: unless-stopped
 
@@ -261,21 +161,47 @@ services:
       - backend
       - telegram-bot
 
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in .env}
+
     ports:
-      - "80:80"
-      - "443:443"
+      # Let's Encrypt validates over port 80, and Telegram only delivers
+      # webhooks to 443, 80, 88 or 8443 — keep the defaults in production.
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
 
     volumes:
-      - ./ssl:/etc/nginx/certs:ro
+      - letsencrypt:/etc/letsencrypt:ro
+      - acme_challenge:/var/www/certbot:ro
 
-    networks:
-      - telegram_network
+    logging: *logging
+
+
+  # Obtains the Let's Encrypt certificate for DOMAIN and renews it.
+  certbot:
+    image: certbot/certbot:v5.8.0
+
+    restart: unless-stopped
+
+    depends_on:
+      - nginx
+
+    entrypoint: ["/bin/sh", "/opt/certbot.sh"]
+
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in .env}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL:?Set LETSENCRYPT_EMAIL in .env}
+      LETSENCRYPT_STAGING: ${LETSENCRYPT_STAGING:-0}
+
+    volumes:
+      - letsencrypt:/etc/letsencrypt
+      - acme_challenge:/var/www/certbot
+      - ./certbot/certbot.sh:/opt/certbot.sh:ro
+
+    logging: *logging
 
 
 volumes:
   postgres_data:
-
-
-networks:
-  telegram_network:
-    name: telegram-miniapp-network
+  letsencrypt:
+  acme_challenge:

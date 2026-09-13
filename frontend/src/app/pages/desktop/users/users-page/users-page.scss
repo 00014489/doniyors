@@ -1,0 +1,8 @@
+:host {
+  display: block;
+}
+
+/* Widened so every column stays readable before the wrapper scrolls. */
+.users__table {
+  min-width: 980px;
+}

@@ -1,0 +1,28 @@
+# Keep the build context small: it is now the repository root, and without
+# this the Angular app's node_modules would be uploaded to the daemon on
+# every .NET image build.
+
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/.angular/
+**/.vs/
+**/.vscode/
+**/.idea/
+
+.git/
+.gitignore
+
+frontend/
+nginx/
+ssl/
+
+**/appsettings.Development.json
+**/appsettings.Local.json
+.env
+.env.*
+!.env.example
+
+**/*.user
+**/*.suo

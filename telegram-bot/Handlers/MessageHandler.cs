@@ -1,173 +1,260 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Net;
 using Telegram.Bot;
 using Telegram.Bot.Types;
-using telegram_bot.DAL.Entities;
+using Telegram.Bot.Types.Enums;
+using Doniyors.Data.Entities;
 using telegram_bot.Keyboards;
 using telegram_bot.Services;
 using telegram_bot.Services.Localization;
+using DbUser = Doniyors.Data.Entities.User;
 
 namespace telegram_bot.Handlers
 {
+    /// <summary>
+    /// Every reply is written in the member's language as stored in
+    /// <c>Users.LanguageCode</c>, read fresh for each message — the Mini App and
+    /// the admin panel can change it at any moment. A member who has not chosen
+    /// one yet gets the prompt in every language.
+    /// </summary>
     public class MessageHandler
     {
+        private readonly ITelegramBotClient _bot;
         private readonly CommandHandler _commandHandler;
         private readonly UserService _userService;
         private readonly SessionService _sessionService;
         private readonly ReplyKeyboards _replyKeyboards;
-        private readonly InlineKeyboards _inlineBtns;
-        private readonly ILogger<MessageHandler> _logger;
         private readonly ILocalizationService _localizationService;
-        private readonly ITelegramBotClient _bot;
+        private readonly QrScanHandler _qrScanHandler;
+        private readonly MiniAppMenuButton _menuButton;
+        private readonly ILogger<MessageHandler> _logger;
 
-        public MessageHandler(ITelegramBotClient bot, CommandHandler commandHandler, UserService userService, SessionService sessionService, ReplyKeyboards replyKeyboards, InlineKeyboards inlineBtns, ILogger<MessageHandler> logger, ILocalizationService localizationService)
+        public MessageHandler(
+            ITelegramBotClient bot,
+            CommandHandler commandHandler,
+            UserService userService,
+            SessionService sessionService,
+            ReplyKeyboards replyKeyboards,
+            ILocalizationService localizationService,
+            QrScanHandler qrScanHandler,
+            MiniAppMenuButton menuButton,
+            ILogger<MessageHandler> logger)
         {
             _bot = bot;
             _commandHandler = commandHandler;
             _userService = userService;
             _sessionService = sessionService;
             _replyKeyboards = replyKeyboards;
-            _inlineBtns = inlineBtns;
-            _logger = logger;
             _localizationService = localizationService;
+            _qrScanHandler = qrScanHandler;
+            _menuButton = menuButton;
+            _logger = logger;
         }
 
-        public async Task HandleAsync(Message message)
+        public async Task HandleAsync(
+            Message message,
+            CancellationToken cancellationToken = default)
         {
-            switch (message)
+            // No sender (e.g. a channel post): nobody to answer, and no language
+            // to answer in.
+            if (message.From is null)
+                return;
+
+            // Read before looking at the message type: the QR scanning step
+            // waits for photos, not text. A member with no session row reads
+            // back as None, which is also "not in a flow".
+            var sessionStep = await _sessionService.GetSessionStepAsync(message.From.Id, cancellationToken);
+
+            switch (sessionStep)
             {
-                case { Text: not null }:
-                    var sessionStep = await _sessionService.GetSessionStepAsync(message.From!.Id);
-                    if (sessionStep != SessionStep.None && sessionStep != null)
-                    {   
-                        switch (sessionStep)
-                        {
-                            case SessionStep.WaitingForLanguage:
+                case SessionStep.WaitingForPhoto:
+                    await _qrScanHandler.HandleSessionMessageAsync(message, cancellationToken);
+                    return;
 
-                                if (_localizationService.IsTranslation("cancel", message.Text!))
-                                {
-                                    await _sessionService.SetSessionStepAsync(message.From!.Id, SessionStep.None);
+                case SessionStep.WaitingForLanguage:
+                    await HandleLanguageChoiceAsync(message, cancellationToken);
+                    return;
 
-                                    var user = await _userService.GetUserByTgIdAsync(message.From.Id);
-                                    if (user == null)
-                                    {
-                                        _logger.LogWarning("User not found. TgUserId={TgUserId}", message.From.Id);
-                                        return;
-                                    }
-
-                                    await _bot.SendMessage(
-                                        message.Chat.Id,
-                                        _localizationService.Get(user.LanguageCode, "cancel_message"),
-                                        replyMarkup: await _replyKeyboards.MainMenu(message.From.Id, user.LanguageCode));
-
-                                    break;
-                                }
-
-                                var langCode = _localizationService.GetLanguageCode(message.Text!);
-
-                                if (langCode is not null)
-                                {
-                                    await _userService.UpdateLanguage(message.From!.Id, langCode);
-                                    await _sessionService.SetSessionStepAsync(message.From!.Id, SessionStep.None);
-
-                                    await _bot.SendMessage(
-                                        message.Chat.Id,
-                                        _localizationService.Get(langCode, "welcome"),
-                                        replyMarkup: await _replyKeyboards.MainMenu(message.From.Id, langCode));
-                                }
-                                else
-                                {
-                                    await _bot.SendMessage(
-                                        message.Chat.Id,
-                                        _localizationService.GetAllMessages("another_lang"));
-                                }
-
-                                break;
-                            default:
-                                await _bot.SendMessage(message.Chat.Id, "You are currently in a session. Please complete it before sending other messages.");
-                                break;
-                        }
-                        return;
-                    }
-                    else if (message.Text.StartsWith("/"))
-                    {
-                        await _commandHandler.HandleAsync(message);
-                    }
-                    else if (_localizationService.IsTranslation("profile", message.Text))
-                    {
-                        var user = await _userService.GetUserByTgIdAsync(message.From!.Id);
-                        if (user == null)
-                        {
-                            _logger.LogWarning("User not found. TgUserId={TgUserId}", message.From!.Id);
-                            return;
-                        }
-                        var lang = user.LanguageCode;
-
-                        var profileMessage =
-                            $"👤 <b>{message.From?.FirstName}</b>\n\n" +
-                            $"──────────────\n" +
-                            // $"👤 <b>{_localizationService.Get(lang, "user_name")}:</b> {user.UserName}\n" +
-                            $"🌐 <b>{_localizationService.Get(lang, "language_is")}:</b> {_localizationService.Get(user.LanguageCode, "full_name")}\n" +
-                            $"📅 <b>{_localizationService.Get(lang, "registered_at")}:</b> {user.RegisteredAt:dd.MM.yyyy HH:mm}\n\n" +
-                            $"⭐ <b>{_localizationService.Get(lang, "points")}:</b> <tg-spoiler>{user.Points}</tg-spoiler>\n" +
-                            $"──────────────";
-                            await _bot.SendMessage(
-                                message.Chat.Id,
-                                profileMessage,
-                                replyMarkup: _replyKeyboards.ChangeLanguageButton(lang),
-                                parseMode: Telegram.Bot.Types.Enums.ParseMode.Html);
-                    }
-                    else if (_localizationService.IsTranslation("main_menu", message.Text))
-                    {
-                        var user = await _userService.GetUserByTgIdAsync(message.From.Id);
-                        if (user == null)
-                        {
-                            _logger.LogWarning("User not found. TgUserId={TgUserId}", message.From.Id);
-                            return;
-                        }
-                        var lang = user.LanguageCode;
-
-                        await _bot.SendMessage(
-                            message.Chat.Id,
-                            _localizationService.Get(lang, "returned_main_menu"),
-                            replyMarkup: await _replyKeyboards.MainMenu(message.From.Id, lang));
-                    }
-                    else if (_localizationService.IsTranslation("change_language", message.Text))
-                    {
-                        var user = await _userService.GetUserByTgIdAsync(message.From.Id);
-                        if (user == null)
-                        {
-                            _logger.LogWarning("User not found. TgUserId={TgUserId}", message.From.Id);
-                            return;
-                        }
-                        await _sessionService.SetSessionStepAsync(message.From.Id, SessionStep.WaitingForLanguage);
-                        await _bot.SendMessage(
-                            message.Chat.Id,
-                            _localizationService.GetAllMessages("choose_language"),
-                            replyMarkup: _replyKeyboards.SelectLanguage(_localizationService.GetLanguageFullNames(), user.LanguageCode));
-                    }
-                    else
-                    {
-                        await _bot.SendMessage(
-                            message.Chat.Id,
-                            $"You said: {message.Text}");
-                    }
-                    break;
-
-                case { Photo: not null }:
-                    await _bot.SendMessage(message.Chat.Id, "Nice photo!");
-                    break;
-
-                case { Document: not null }:
-                    await _bot.SendMessage(message.Chat.Id, "I received your document.");
-                    break;
-
-                default:
-                    await _bot.SendMessage(message.Chat.Id, "I don't support this message type yet.");
-                    break;
+                case not SessionStep.None:
+                    await ReplyAsync(message, "in_session", withMainMenu: false, cancellationToken);
+                    return;
             }
+
+            if (message.Text is not { } text)
+            {
+                // Photos, documents, stickers…: nothing to do outside a flow.
+                await ReplyAsync(message, "use_menu", withMainMenu: true, cancellationToken);
+                return;
+            }
+
+            if (text.StartsWith('/'))
+            {
+                await _commandHandler.HandleAsync(message, cancellationToken);
+            }
+            else if (_localizationService.IsTranslation("scan_qr", text))
+            {
+                await _qrScanHandler.StartAsync(message, cancellationToken);
+            }
+            else if (_localizationService.IsTranslation("profile", text))
+            {
+                await ShowProfileAsync(message, cancellationToken);
+            }
+            else if (_localizationService.IsTranslation("main_menu", text))
+            {
+                await ReplyAsync(message, "returned_main_menu", withMainMenu: true, cancellationToken);
+            }
+            else if (_localizationService.IsTranslation("change_language", text))
+            {
+                await StartLanguageChoiceAsync(message, cancellationToken);
+            }
+            else
+            {
+                await ReplyAsync(message, "use_menu", withMainMenu: true, cancellationToken);
+            }
+        }
+
+        private async Task ShowProfileAsync(Message message, CancellationToken cancellationToken)
+        {
+            var user = await FindUserAsync(message, cancellationToken);
+
+            if (user is null)
+                return;
+
+            var lang = user.LanguageCode;
+
+            var languageName = _localizationService.IsSupported(lang)
+                ? _localizationService.Get(lang, "full_name")
+                : "—";
+
+            // HTML parse mode: a first name such as "<Ali>" would otherwise be
+            // read as a tag and make Telegram reject the whole message.
+            var firstName = WebUtility.HtmlEncode(message.From!.FirstName);
+
+            var profileMessage =
+                $"👤 <b>{firstName}</b>\n\n" +
+                $"──────────────\n" +
+                $"🌐 <b>{_localizationService.Get(lang, "language_is")}:</b> {languageName}\n" +
+                $"📅 <b>{_localizationService.Get(lang, "registered_at")}:</b> {user.RegisteredAt:dd.MM.yyyy HH:mm}\n\n" +
+                $"⭐ <b>{_localizationService.Get(lang, "points")}:</b> <tg-spoiler>{user.Points}</tg-spoiler>\n" +
+                $"──────────────";
+
+            await _bot.SendMessage(
+                message.Chat.Id,
+                profileMessage,
+                parseMode: ParseMode.Html,
+                replyMarkup: _replyKeyboards.ChangeLanguageButton(lang),
+                cancellationToken: cancellationToken);
+        }
+
+        private async Task StartLanguageChoiceAsync(Message message, CancellationToken cancellationToken)
+        {
+            var user = await FindUserAsync(message, cancellationToken);
+
+            if (user is null)
+                return;
+
+            await _sessionService.SetSessionStepAsync(user.TgUserId, SessionStep.WaitingForLanguage, cancellationToken);
+
+            await _bot.SendMessage(
+                message.Chat.Id,
+                _localizationService.Prompt(user.LanguageCode, "choose_language"),
+                replyMarkup: _replyKeyboards.SelectLanguage(_localizationService.GetLanguageFullNames(), user.LanguageCode),
+                cancellationToken: cancellationToken);
+        }
+
+        private async Task HandleLanguageChoiceAsync(Message message, CancellationToken cancellationToken)
+        {
+            // A session row cannot outlive its user, so without one there is
+            // nothing to leave — just point them at /start.
+            var user = await FindUserAsync(message, cancellationToken);
+
+            if (user is null)
+                return;
+
+            if (message.Text is { } text && _localizationService.IsTranslation("cancel", text))
+            {
+                await _sessionService.SetSessionStepAsync(user.TgUserId, SessionStep.None, cancellationToken);
+
+                await _bot.SendMessage(
+                    message.Chat.Id,
+                    _localizationService.Prompt(user.LanguageCode, "cancel_message"),
+                    replyMarkup: await _replyKeyboards.MainMenu(user.TgUserId, user.LanguageCode, cancellationToken),
+                    cancellationToken: cancellationToken);
+
+                return;
+            }
+
+            var langCode = message.Text is null
+                ? null
+                : _localizationService.GetLanguageCode(message.Text);
+
+            if (langCode is null)
+            {
+                await _bot.SendMessage(
+                    message.Chat.Id,
+                    _localizationService.Prompt(user.LanguageCode, "another_lang"),
+                    cancellationToken: cancellationToken);
+
+                return;
+            }
+
+            await _userService.UpdateLanguage(user.TgUserId, langCode, cancellationToken);
+            await _sessionService.SetSessionStepAsync(user.TgUserId, SessionStep.None, cancellationToken);
+            await _menuButton.UpdateAsync(message.Chat.Id, langCode, cancellationToken);
+
+            await _bot.SendMessage(
+                message.Chat.Id,
+                _localizationService.Get(langCode, "welcome"),
+                replyMarkup: await _replyKeyboards.MainMenu(user.TgUserId, langCode, cancellationToken),
+                cancellationToken: cancellationToken);
+        }
+
+        /// <summary>A text from language.json in the sender's language, optionally with the main menu.</summary>
+        private async Task ReplyAsync(
+            Message message,
+            string key,
+            bool withMainMenu,
+            CancellationToken cancellationToken)
+        {
+            var user = await FindUserAsync(message, cancellationToken);
+
+            if (user is null)
+                return;
+
+            var text = _localizationService.Prompt(user.LanguageCode, key);
+
+            if (withMainMenu)
+            {
+                await _bot.SendMessage(
+                    message.Chat.Id,
+                    text,
+                    replyMarkup: await _replyKeyboards.MainMenu(user.TgUserId, user.LanguageCode, cancellationToken),
+                    cancellationToken: cancellationToken);
+            }
+            else
+            {
+                await _bot.SendMessage(message.Chat.Id, text, cancellationToken: cancellationToken);
+            }
+        }
+
+        /// <summary>
+        /// The sender's row, or <c>null</c> after asking them to /start — without
+        /// a row there is no stored language to answer in.
+        /// </summary>
+        private async Task<DbUser?> FindUserAsync(Message message, CancellationToken cancellationToken)
+        {
+            var user = await _userService.GetUserByTgIdAsync(message.From!.Id, cancellationToken);
+
+            if (user is null)
+            {
+                _logger.LogInformation("Message from an unregistered user. TgUserId={TgUserId}", message.From.Id);
+
+                await _bot.SendMessage(
+                    message.Chat.Id,
+                    _localizationService.Prompt(null, "start_first"),
+                    cancellationToken: cancellationToken);
+            }
+
+            return user;
         }
     }
 }

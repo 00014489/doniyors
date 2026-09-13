@@ -1,0 +1,200 @@
+<form
+  class="admin-form"
+  novalidate
+  [formGroup]="form"
+  (ngSubmit)="submit()">
+
+  @if (errorMessage(); as error) {
+    <div class="admin-banner" role="alert">
+
+      <span class="material-symbols-rounded" aria-hidden="true">
+        error
+      </span>
+
+      <p>{{ error }}</p>
+
+    </div>
+  }
+
+  <div class="admin-form__field">
+
+    <label for="user-name">
+      {{ 'admin.users.form.name' | translate }} <span aria-hidden="true">*</span>
+    </label>
+
+    <input
+      id="user-name"
+      type="text"
+      formControlName="userName"
+      maxlength="100"
+      autocomplete="off"
+      required
+      [attr.aria-invalid]="showError('userName')"
+      [attr.aria-describedby]="showError('userName') ? 'user-name-error' : null" />
+
+    @if (showError('userName')) {
+      <p id="user-name-error" class="admin-form__message" role="alert">
+        @if (form.controls.userName.hasError('required')) {
+          {{ 'admin.users.form.nameRequired' | translate }}
+        } @else {
+          {{ 'admin.users.form.nameTooLong' | translate }}
+        }
+      </p>
+    }
+
+  </div>
+
+  <div class="admin-form__row">
+
+    <div class="admin-form__field">
+
+      <label for="user-tg-id">
+        {{ 'admin.common.telegramId' | translate }} <span aria-hidden="true">*</span>
+      </label>
+
+      <input
+        id="user-tg-id"
+        type="number"
+        formControlName="tgUserId"
+        min="1"
+        step="1"
+        inputmode="numeric"
+        required
+        [attr.aria-invalid]="showError('tgUserId')"
+        [attr.aria-describedby]="showError('tgUserId') ? 'user-tg-id-error' : null" />
+
+      @if (showError('tgUserId')) {
+        <p id="user-tg-id-error" class="admin-form__message" role="alert">
+          {{ 'admin.users.form.telegramIdRequired' | translate }}
+        </p>
+      }
+
+    </div>
+
+    <div class="admin-form__field">
+
+      <label for="user-role">
+        {{ 'admin.users.accountType' | translate }} <span aria-hidden="true">*</span>
+      </label>
+
+      <select
+        id="user-role"
+        formControlName="typeUserId"
+        required
+        [attr.aria-invalid]="showError('typeUserId')"
+        [attr.aria-describedby]="showError('typeUserId') ? 'user-role-error' : null">
+
+        <option [value]="0" disabled>{{ 'admin.users.form.selectAccountType' | translate }}</option>
+
+        @for (role of roles(); track role.id) {
+          <option [value]="role.id">{{ ('admin.roles.' + role.name) | translate }}</option>
+        }
+
+      </select>
+
+      @if (rolesFailed()) {
+        <p class="admin-form__message" role="alert">
+          {{ 'admin.users.form.rolesFailed' | translate }}
+        </p>
+      } @else if (showError('typeUserId')) {
+        <p id="user-role-error" class="admin-form__message" role="alert">
+          {{ 'admin.users.form.accountTypeRequired' | translate }}
+        </p>
+      }
+
+    </div>
+
+  </div>
+
+  <div class="admin-form__row">
+
+    <div class="admin-form__field">
+
+      <label for="user-points">{{ 'admin.common.points' | translate }}</label>
+
+      <!-- Read-only: the balance is the sum of the user's active transactions.
+           Recording a transaction is the only way to change it. -->
+      <output id="user-points" class="admin-form__readonly">
+        {{ user()?.points ?? 0 }}
+      </output>
+
+      <span class="admin-form__hint">
+        {{ 'admin.users.form.pointsHint' | translate }}
+      </span>
+
+    </div>
+
+    <div class="admin-form__field">
+
+      <label for="user-language">{{ 'admin.users.language' | translate }}</label>
+
+      <select
+        id="user-language"
+        formControlName="languageCode"
+        aria-describedby="user-language-hint">
+
+        <option value="">{{ 'admin.users.languageNotSet' | translate }}</option>
+
+        @for (language of languages; track language.code) {
+          <option [value]="language.code" [attr.lang]="language.code">{{ language.label }}</option>
+        }
+
+      </select>
+
+      <span class="admin-form__hint" id="user-language-hint">
+        {{ 'admin.users.form.languageHint' | translate }}
+      </span>
+
+    </div>
+
+  </div>
+
+  <div class="admin-form__checkbox">
+
+    <input
+      id="user-status"
+      type="checkbox"
+      formControlName="status" />
+
+    <label for="user-status">
+      {{ 'admin.common.active' | translate }}
+
+      <span class="admin-form__hint">
+        {{ 'admin.users.form.activeHint' | translate }}
+      </span>
+    </label>
+
+  </div>
+
+  <div class="admin-form__actions">
+
+    <button
+      type="button"
+      class="admin-btn admin-btn--secondary"
+      [disabled]="saving()"
+      (click)="cancel.emit()">
+      {{ 'admin.common.cancel' | translate }}
+    </button>
+
+    <button
+      type="submit"
+      class="admin-btn admin-btn--primary"
+      [disabled]="saving()">
+
+      @if (saving()) {
+        <span
+          class="material-symbols-rounded admin-spinner"
+          aria-hidden="true">
+          progress_activity
+        </span>
+
+        <span>{{ 'admin.common.saving' | translate }}</span>
+      } @else {
+        <span>{{ submitLabel() || ('admin.common.saveChanges' | translate) }}</span>
+      }
+
+    </button>
+
+  </div>
+
+</form>

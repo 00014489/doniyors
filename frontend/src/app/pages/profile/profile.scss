@@ -1,0 +1,283 @@
+:host {
+  display: block;
+
+  min-height: 100%;
+}
+
+.profile {
+  padding-bottom: 16px;
+}
+
+/* ---- Identity ---------------------------------------------------------- */
+
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  padding: 28px 18px 20px;
+
+  text-align: center;
+}
+
+.header__avatar {
+  /* The Instagram-style ring: a soft halo that works on either ground. */
+  padding: 3px;
+
+  border-radius: 50%;
+
+  background: linear-gradient(
+    135deg,
+    var(--app-primary),
+    var(--app-warning)
+  );
+}
+
+.header__name {
+  margin: 14px 0 0;
+
+  color: var(--app-text);
+
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.header__username {
+  margin: 4px 0 0;
+
+  color: var(--app-text-secondary);
+
+  font-size: 15px;
+}
+
+/* ---- Stats ------------------------------------------------------------- */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  margin: 0 18px;
+
+  background: var(--app-surface);
+
+  border-radius: var(--app-radius);
+
+  overflow: hidden;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 4px;
+
+  padding: 16px 12px;
+}
+
+.stat + .stat {
+  border-left: 1px solid var(--app-border);
+}
+
+.stat dt {
+  color: var(--app-text-secondary);
+
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .3px;
+  text-transform: uppercase;
+}
+
+.stat dd {
+  margin: 0;
+
+  color: var(--app-text);
+
+  font-size: 26px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.stat__points {
+  color: var(--app-warning);
+}
+
+/* ---- Language ---------------------------------------------------------- */
+
+.language {
+  margin: 20px 18px 0;
+}
+
+.language__title {
+  margin: 0 0 10px;
+
+  color: var(--app-text-secondary);
+
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .3px;
+  text-transform: uppercase;
+}
+
+.language__options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+
+  padding: 4px;
+
+  border-radius: var(--app-radius);
+
+  background: var(--app-surface);
+}
+
+.language__option {
+  padding: 10px 6px;
+
+  border: 0;
+  border-radius: calc(var(--app-radius) - 4px);
+
+  background: transparent;
+  color: var(--app-text);
+
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: background-color .15s ease, color .15s ease;
+}
+
+.language__option--active {
+  background: var(--app-primary);
+
+  /* The page background is the opposite end of the scale from the primary in
+     both schemes: white on the dark light-theme primary, black on the light
+     dark-theme one. */
+  color: var(--app-bg);
+}
+
+.language__option:disabled {
+  cursor: progress;
+}
+
+.language__option:focus-visible {
+  outline: 2px solid var(--app-primary);
+  outline-offset: 2px;
+}
+
+.language__error {
+  margin: 8px 0 0;
+
+  color: var(--app-danger, #e5484d);
+
+  font-size: 13px;
+}
+
+/* ---- History ----------------------------------------------------------- */
+
+.history {
+  margin-top: 26px;
+}
+
+.history__title {
+  margin: 0 0 12px;
+  padding: 0 18px;
+
+  color: var(--app-text);
+
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.empty {
+  margin: 0;
+  padding: 28px 18px;
+
+  color: var(--app-text-secondary);
+
+  font-size: 15px;
+  text-align: center;
+}
+
+/* ---- States ------------------------------------------------------------ */
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+
+  padding: 48px 18px;
+
+  text-align: center;
+}
+
+.state p {
+  margin: 0;
+
+  color: var(--app-text-secondary);
+  font-size: 15px;
+}
+
+.retry {
+  padding: 8px 18px;
+
+  border-radius: 999px;
+
+  border: 1px solid var(--app-primary);
+  background: color-mix(in srgb, var(--app-primary) 14%, transparent);
+
+  /* Body text, not the theme's link colour, which misses 4.5:1 on this tint. */
+  color: var(--app-text);
+
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.skeleton-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+
+  padding: 28px 18px;
+}
+
+.skeleton {
+  background: var(--app-surface-2);
+
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.skeleton--avatar {
+  width: 96px;
+  height: 96px;
+
+  border-radius: 50%;
+}
+
+.skeleton--line {
+  width: 60%;
+  height: 18px;
+
+  border-radius: 8px;
+}
+
+.skeleton--short {
+  width: 35%;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .55; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}

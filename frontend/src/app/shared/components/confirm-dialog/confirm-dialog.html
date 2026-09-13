@@ -1,0 +1,49 @@
+<dialog
+  #dialog
+  class="confirm"
+  [attr.aria-labelledby]="headingId"
+  [attr.aria-describedby]="message() ? messageId : null"
+  (close)="onClose()"
+  (cancel)="$event.preventDefault(); cancel()">
+
+  <h2 [id]="headingId" class="confirm__heading">
+    {{ heading() || ('admin.common.areYouSure' | translate) }}
+  </h2>
+
+  @if (message()) {
+    <p [id]="messageId" class="confirm__message">
+      {{ message() }}
+    </p>
+  }
+
+  <div class="confirm__actions">
+
+    <button
+      type="button"
+      class="admin-btn admin-btn--secondary"
+      [disabled]="busy()"
+      (click)="cancel()">
+      {{ cancelLabel() || ('admin.common.cancel' | translate) }}
+    </button>
+
+    <button
+      type="button"
+      class="admin-btn admin-btn--danger-solid"
+      autofocus
+      [disabled]="busy()"
+      (click)="confirm()">
+
+      @if (busy()) {
+        <span
+          class="material-symbols-rounded admin-spinner confirm__spinner"
+          aria-hidden="true">
+          progress_activity
+        </span>
+      }
+
+      {{ confirmLabel() || ('admin.common.yes' | translate) }}
+    </button>
+
+  </div>
+
+</dialog>

@@ -45,7 +45,7 @@
   z-index: 90;
   padding: 12px 16px;
   background: var(--app-danger);
-  color: #1a1a1a; // dark text — white on --app-danger only computes to ~3:1
+  color: var(--app-bg); // --app-danger follows the text colour, so the background colour is its opposite
   text-align: center;
   font-size: 14px;
 }

@@ -1,0 +1,183 @@
+<section class="admin-page">
+
+  <nav class="admin-breadcrumb" [attr.aria-label]="'admin.common.breadcrumb' | translate">
+    <a routerLink="/users">{{ 'admin.users.title' | translate }}</a>
+
+    <span class="material-symbols-rounded" aria-hidden="true">
+      chevron_right
+    </span>
+
+    <span aria-current="page">{{ 'admin.common.details' | translate }}</span>
+  </nav>
+
+  @if (isLoading()) {
+    <div class="admin-state" role="status" aria-live="polite">
+
+      <span
+        class="material-symbols-rounded admin-spinner"
+        aria-hidden="true">
+        progress_activity
+      </span>
+
+      <p>{{ 'admin.users.loadingOne' | translate }}</p>
+    </div>
+  }
+
+  @if (errorMessage(); as error) {
+    <div class="admin-banner admin-page__banner" role="alert">
+
+      <span class="material-symbols-rounded" aria-hidden="true">
+        error
+      </span>
+
+      <div>
+        <strong>{{ 'admin.common.somethingWrong' | translate }}</strong>
+        <p>{{ error | translate }}</p>
+      </div>
+
+      <button type="button" class="admin-btn" (click)="goToList()">
+        {{ 'admin.users.backToList' | translate }}
+      </button>
+    </div>
+  }
+
+  @if (!isLoading() && !errorMessage()) {
+
+    @if (user(); as user) {
+
+      @if (deleteError(); as error) {
+        <div class="admin-banner admin-page__banner" role="alert">
+
+          <span class="material-symbols-rounded" aria-hidden="true">
+            error
+          </span>
+
+          <div>
+            <strong>{{ 'admin.common.somethingWrong' | translate }}</strong>
+            <p>{{ error | translate }}</p>
+          </div>
+        </div>
+      }
+
+      <header class="admin-page-header">
+
+        <div>
+          <p class="admin-eyebrow">{{ 'admin.users.eyebrow' | translate: { id: user.id } }}</p>
+
+          <h1>{{ user.userName }}</h1>
+
+          <p
+            class="admin-status admin-page-header__status"
+            [class.is-active]="user.status"
+            [class.is-disabled]="!user.status">
+            {{ (user.status ? 'admin.common.active' : 'admin.common.disabled') | translate }}
+          </p>
+        </div>
+
+        <div class="admin-page-header__actions">
+
+          <button
+            type="button"
+            class="admin-btn admin-btn--secondary"
+            (click)="goBack()">
+
+            <span class="material-symbols-rounded" aria-hidden="true">
+              arrow_back
+            </span>
+
+            <span>{{ 'admin.common.back' | translate }}</span>
+          </button>
+
+          <a
+            class="admin-btn admin-btn--primary"
+            [routerLink]="['/users', user.id, 'edit']"
+            [attr.aria-label]="'admin.common.editItem' | translate: { name: user.userName }">
+
+            <span class="material-symbols-rounded" aria-hidden="true">
+              edit
+            </span>
+
+            <span>{{ 'admin.common.edit' | translate }}</span>
+          </a>
+
+          <button
+            type="button"
+            class="admin-btn admin-btn--danger"
+            [disabled]="!user.status"
+            [attr.aria-label]="
+              (user.status ? 'admin.common.deleteItem' : 'admin.common.itemAlreadyDisabled')
+                | translate: { name: user.userName }
+            "
+            (click)="askDelete()">
+
+            <span class="material-symbols-rounded" aria-hidden="true">
+              delete
+            </span>
+
+            <span>{{ 'admin.common.delete' | translate }}</span>
+          </button>
+
+        </div>
+
+      </header>
+
+      <dl class="admin-detail-grid">
+
+        <div class="admin-detail-item">
+          <dt>{{ 'admin.common.telegramId' | translate }}</dt>
+          <dd>{{ user.tgUserId }}</dd>
+        </div>
+
+        <div class="admin-detail-item">
+          <dt>{{ 'admin.users.accountType' | translate }}</dt>
+          <dd>{{ ('admin.roles.' + user.typeUserName) | translate }}</dd>
+        </div>
+
+        <div class="admin-detail-item">
+          <dt>{{ 'admin.common.points' | translate }}</dt>
+          <dd>{{ user.points }}</dd>
+        </div>
+
+        <div class="admin-detail-item">
+          <dt>{{ 'admin.users.language' | translate }}</dt>
+          <dd>
+            @if (languageName(user.languageCode); as name) {
+              {{ name }}
+            } @else {
+              {{ 'admin.users.languageNotSet' | translate }}
+            }
+          </dd>
+        </div>
+
+        <div class="admin-detail-item">
+          <dt>{{ 'admin.users.registered' | translate }}</dt>
+          <dd>{{ user.registeredAt | localDate: 'dd MMM yyyy, HH:mm' }}</dd>
+        </div>
+
+        <div class="admin-detail-item">
+          <dt>{{ 'admin.users.lastUpdated' | translate }}</dt>
+          <dd>{{ user.updatedAt | localDate: 'dd MMM yyyy, HH:mm' }}</dd>
+        </div>
+
+        <div class="admin-detail-item">
+          <dt>{{ 'admin.common.status' | translate }}</dt>
+          <dd>{{ (user.status ? 'admin.common.active' : 'admin.common.disabled') | translate }}</dd>
+        </div>
+
+      </dl>
+
+      <app-confirm-dialog
+        [open]="confirmOpen()"
+        [heading]="'admin.users.deleteHeading' | translate"
+        [message]="'admin.users.deleteMessage' | translate: { name: user.userName }"
+        [confirmLabel]="'admin.common.yes' | translate"
+        [cancelLabel]="'admin.common.cancel' | translate"
+        [busy]="isDeleting()"
+        (confirmed)="confirmDelete()"
+        (cancelled)="cancelDelete()" />
+
+    }
+
+  }
+
+</section>

@@ -1,0 +1,206 @@
+<section class="admin-page">
+  <header class="admin-page-header">
+    <div>
+      <p class="admin-eyebrow">{{ 'admin.common.management' | translate }}</p>
+
+      <h1>{{ 'admin.users.title' | translate }}</h1>
+
+      <p class="admin-page-header__description">
+        {{ 'admin.users.description' | translate }}
+      </p>
+    </div>
+
+    <a class="admin-btn admin-btn--primary" routerLink="/users/new">
+      <span class="material-symbols-rounded" aria-hidden="true"> person_add </span>
+
+      <span>{{ 'admin.users.add' | translate }}</span>
+    </a>
+  </header>
+
+  @if (deleteError(); as error) {
+    <div class="admin-banner admin-page__banner" role="alert">
+      <span class="material-symbols-rounded" aria-hidden="true"> error </span>
+
+      <div>
+        <strong>{{ 'admin.common.somethingWrong' | translate }}</strong>
+        <p>{{ error.key | translate: error.params }}</p>
+      </div>
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="admin-state" role="status" aria-live="polite">
+      <span class="material-symbols-rounded admin-spinner" aria-hidden="true">
+        progress_activity
+      </span>
+
+      <p>{{ 'admin.users.loading' | translate }}</p>
+    </div>
+  }
+
+  @if (errorMessage(); as error) {
+    <div class="admin-banner admin-page__banner" role="alert">
+      <span class="material-symbols-rounded" aria-hidden="true"> error </span>
+
+      <div>
+        <strong>{{ 'admin.common.somethingWrong' | translate }}</strong>
+        <p>{{ error | translate }}</p>
+      </div>
+
+      <button type="button" class="admin-btn" (click)="reload()">
+        {{ 'admin.common.tryAgain' | translate }}
+      </button>
+    </div>
+  }
+
+  @if (!isLoading() && !errorMessage()) {
+    @if (users().length === 0) {
+      <div class="admin-state" role="status">
+        <span class="material-symbols-rounded admin-state__icon" aria-hidden="true"> group </span>
+
+        <h2>{{ 'admin.common.noData' | translate }}</h2>
+
+        <p>{{ 'admin.users.empty' | translate }}</p>
+
+        <a class="admin-btn admin-btn--primary admin-state__action" routerLink="/users/new">
+          <span class="material-symbols-rounded" aria-hidden="true"> person_add </span>
+
+          <span>{{ 'admin.users.add' | translate }}</span>
+        </a>
+      </div>
+    } @else {
+      <div class="admin-table-wrapper">
+        <table class="admin-table users__table">
+          <caption class="sr-only">
+            {{
+              'admin.users.tableCaption' | translate
+            }}
+          </caption>
+
+          <thead>
+            <tr>
+              <th scope="col">{{ 'admin.common.id' | translate }}</th>
+              <th scope="col">{{ 'admin.users.colUser' | translate }}</th>
+              <th scope="col">{{ 'admin.common.telegramId' | translate }}</th>
+              <th scope="col">{{ 'admin.users.accountType' | translate }}</th>
+              <th scope="col">{{ 'admin.common.points' | translate }}</th>
+              <th scope="col">{{ 'admin.common.status' | translate }}</th>
+              <th scope="col">{{ 'admin.users.registered' | translate }}</th>
+              <th scope="col">
+                <span class="sr-only">{{ 'admin.common.actions' | translate }}</span>
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (user of users(); track user.id) {
+              <tr>
+                <td>
+                  <span class="admin-table__id">#{{ user.id }}</span>
+                </td>
+
+                <td>
+                  <div class="admin-cell">
+                    <span class="material-symbols-rounded" aria-hidden="true"> person </span>
+
+                    <strong>{{ user.userName }}</strong>
+                  </div>
+                </td>
+
+                <td>
+                  <span class="admin-table__id">{{ user.tgUserId }}</span>
+                </td>
+
+                <td>{{ 'admin.roles.' + user.typeUserName | translate }}</td>
+
+                <td>
+                  <span class="admin-cell--points">
+                    <span class="material-symbols-rounded" aria-hidden="true"> stars </span>
+
+                    {{ user.points }}
+                  </span>
+                </td>
+
+                <td>
+                  <span
+                    class="admin-status"
+                    [class.is-active]="user.status"
+                    [class.is-disabled]="!user.status"
+                  >
+                    {{
+                      (user.status ? 'admin.common.active' : 'admin.common.disabled') | translate
+                    }}
+                  </span>
+                </td>
+
+                <td>{{ user.registeredAt | localDate: 'dd MMM yyyy' }}</td>
+
+                <td>
+                  <div class="admin-row-actions">
+                    <a
+                      class="admin-icon-btn"
+                      [routerLink]="['/users', user.id]"
+                      [attr.aria-label]="
+                        'admin.common.viewDetailsOf' | translate: { name: user.userName }
+                      "
+                      [attr.title]="
+                        'admin.common.viewDetailsOf' | translate: { name: user.userName }
+                      "
+                    >
+                      <span class="material-symbols-rounded" aria-hidden="true"> visibility </span>
+                    </a>
+
+                    <a
+                      class="admin-icon-btn"
+                      [routerLink]="['/users', user.id, 'edit']"
+                      [attr.aria-label]="
+                        'admin.common.editItem' | translate: { name: user.userName }
+                      "
+                      [attr.title]="'admin.common.editItem' | translate: { name: user.userName }"
+                    >
+                      <span class="material-symbols-rounded" aria-hidden="true"> edit </span>
+                    </a>
+
+                    <button
+                      type="button"
+                      class="admin-icon-btn admin-icon-btn--danger"
+                      [disabled]="!user.status"
+                      [attr.aria-label]="
+                        (user.status
+                          ? 'admin.common.deleteItem'
+                          : 'admin.common.itemAlreadyDisabled'
+                        ) | translate: { name: user.userName }
+                      "
+                      [attr.title]="
+                        user.status
+                          ? ('admin.common.deleteItem' | translate: { name: user.userName })
+                          : ('admin.common.alreadyDisabled' | translate)
+                      "
+                      (click)="askDelete(user)"
+                    >
+                      <span class="material-symbols-rounded" aria-hidden="true"> delete </span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+
+  <app-confirm-dialog
+    [open]="confirmOpen()"
+    [heading]="'admin.users.deleteHeading' | translate"
+    [message]="
+      'admin.users.deleteMessage'
+        | translate: { name: pendingDelete()?.userName }
+    "
+    [confirmLabel]="'admin.common.yes' | translate"
+    [cancelLabel]="'admin.common.cancel' | translate"
+    [busy]="isDeleting()"
+    (confirmed)="confirmDelete()"
+    (cancelled)="cancelDelete()"
+  />
+</section>

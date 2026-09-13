@@ -4,15 +4,25 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.10" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
+    <!-- Direct reference only to lift the transitive Microsoft.OpenApi 2.0.0,
+         which carries advisory GHSA-v5pm-xwqc-g5wc. Drop it once
+         Microsoft.AspNetCore.OpenApi ships against a patched version. -->
+    <PackageReference Include="Microsoft.OpenApi" Version="2.12.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.10" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.19.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The entities and the EF mapping, shared with the Telegram bot. -->
+    <ProjectReference Include="../shared/Doniyors.Data/Doniyors.Data.csproj" />
   </ItemGroup>
 
 </Project>

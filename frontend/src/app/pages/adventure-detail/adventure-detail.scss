@@ -1,0 +1,257 @@
+:host {
+  display: block;
+
+  min-height: 100%;
+
+  background: var(--app-bg);
+}
+
+/* ---- Gallery ----------------------------------------------------------- */
+
+.gallery {
+  position: relative;
+}
+
+.gallery__strip {
+  display: flex;
+
+  /* One picture per screen, snapping — the platform does the paging, so there
+     is no carousel script to keep in step with the DOM. */
+  scroll-snap-type: x mandatory;
+
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+
+  -webkit-overflow-scrolling: touch;
+}
+
+.gallery__strip::-webkit-scrollbar {
+  display: none;
+}
+
+.gallery__image {
+  flex: 0 0 100%;
+
+  width: 100%;
+  aspect-ratio: 4 / 3;
+
+  object-fit: cover;
+
+  scroll-snap-align: center;
+
+  background: var(--app-surface-2);
+}
+
+.gallery__dots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 12px;
+
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+
+  background: rgb(255 255 255 / 45%);
+
+  transition: width .2s ease, background .2s ease;
+}
+
+.dot--active {
+  width: 18px;
+
+  border-radius: 999px;
+
+  background: #fff;
+}
+
+/* ---- Body -------------------------------------------------------------- */
+
+.body {
+  padding: 20px 18px 24px;
+}
+
+.description {
+  margin: 16px 0 0;
+
+  color: var(--app-text-secondary);
+
+  font-size: 15px;
+  line-height: 1.6;
+
+  /* Administrators type these as plain text, so honour their line breaks. */
+  white-space: pre-line;
+}
+
+.heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.title {
+  flex: 1;
+
+  margin: 0;
+
+  color: var(--app-text);
+
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.badge {
+  flex-shrink: 0;
+
+  margin-top: 4px;
+  padding: 3px 10px;
+
+  border-radius: 999px;
+
+  background: color-mix(in srgb, var(--app-primary) 14%, transparent);
+  color: var(--app-primary);
+
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .3px;
+  text-transform: uppercase;
+}
+
+.facts {
+  display: flex;
+  flex-direction: column;
+
+  margin: 20px 0 0;
+
+  background: var(--app-surface);
+
+  border-radius: var(--app-radius);
+
+  overflow: hidden;
+}
+
+.fact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  padding: 14px 16px;
+
+  border-bottom: 1px solid var(--app-border);
+}
+
+.fact:last-child {
+  border-bottom: none;
+}
+
+.fact dt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  color: var(--app-text-secondary);
+
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.fact dt .material-symbols-rounded {
+  font-size: 20px;
+}
+
+.fact dd {
+  margin: 0;
+
+  color: var(--app-text);
+
+  font-size: 15px;
+  font-weight: 600;
+  text-align: right;
+}
+
+.fact--reward dd {
+  color: var(--app-success);
+  font-weight: 700;
+}
+
+/* ---- States ------------------------------------------------------------ */
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+
+  padding: 48px 18px;
+
+  text-align: center;
+}
+
+.state p {
+  margin: 0;
+
+  color: var(--app-text-secondary);
+  font-size: 15px;
+}
+
+.retry {
+  padding: 8px 18px;
+
+  border-radius: 999px;
+
+  border: 1px solid var(--app-primary);
+  background: color-mix(in srgb, var(--app-primary) 14%, transparent);
+
+  /* Body text, not the theme's link colour, which misses 4.5:1 on this tint. */
+  color: var(--app-text);
+
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.skeleton {
+  background: var(--app-surface-2);
+
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.skeleton--gallery {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+}
+
+.skeleton--line {
+  height: 20px;
+  margin: 20px 18px 0;
+
+  border-radius: 8px;
+}
+
+.skeleton--short {
+  width: 45%;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .55; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+
+  .gallery__strip {
+    scroll-behavior: auto;
+  }
+}

@@ -1,0 +1,170 @@
+<form
+  class="admin-form"
+  novalidate
+  [formGroup]="form"
+  (ngSubmit)="submit()">
+
+  @if (errorMessage(); as error) {
+    <div class="admin-banner" role="alert">
+
+      <span class="material-symbols-rounded" aria-hidden="true">
+        error
+      </span>
+
+      <p>{{ error }}</p>
+
+    </div>
+  }
+
+  @if (referenceFailed()) {
+    <div class="admin-banner" role="alert">
+
+      <span class="material-symbols-rounded" aria-hidden="true">
+        error
+      </span>
+
+      <p>{{ 'admin.transactions.form.referenceFailed' | translate }}</p>
+
+    </div>
+  }
+
+  <div class="admin-form__field">
+
+    <label for="transaction-user">
+      {{ 'admin.transactions.form.user' | translate }} <span aria-hidden="true">*</span>
+    </label>
+
+    <select
+      id="transaction-user"
+      formControlName="userId"
+      required
+      [attr.aria-invalid]="showError('userId')"
+      [attr.aria-describedby]="showError('userId') ? 'transaction-user-error' : null">
+
+      <option [value]="0" disabled>{{ 'admin.transactions.form.selectUser' | translate }}</option>
+
+      @for (user of users(); track user.id) {
+        <option [value]="user.id">
+          {{ user.userName }} (#{{ user.id }})
+        </option>
+      }
+
+    </select>
+
+    @if (showError('userId')) {
+      <p id="transaction-user-error" class="admin-form__message" role="alert">
+        {{ 'admin.transactions.form.userRequired' | translate }}
+      </p>
+    }
+
+  </div>
+
+  <div class="admin-form__field">
+
+    <label for="transaction-adventure">
+      {{ 'admin.transactions.form.adventure' | translate }}
+    </label>
+
+    <select
+      id="transaction-adventure"
+      formControlName="travelId"
+      aria-describedby="transaction-adventure-hint">
+
+      <option [value]="0">{{ 'admin.transactions.form.noAdventure' | translate }}</option>
+
+      @for (adventure of adventures(); track adventure.id) {
+        <option [value]="adventure.id">
+          {{ adventure.title }} (#{{ adventure.id }})
+        </option>
+      }
+
+    </select>
+
+    <span class="admin-form__hint" id="transaction-adventure-hint">
+      {{ 'admin.transactions.form.adventureHint' | translate }}
+    </span>
+
+  </div>
+
+  <div class="admin-form__field">
+
+    <label for="transaction-points">
+      {{ 'admin.transactions.form.points' | translate }} <span aria-hidden="true">*</span>
+    </label>
+
+    <input
+      id="transaction-points"
+      type="number"
+      formControlName="points"
+      step="1"
+      inputmode="numeric"
+      required
+      [attr.aria-invalid]="showError('points')"
+      [attr.aria-describedby]="
+        showError('points')
+          ? 'transaction-points-hint transaction-points-error'
+          : 'transaction-points-hint'
+      " />
+
+    <span class="admin-form__hint" id="transaction-points-hint">
+      {{ 'admin.transactions.form.pointsHint' | translate }}
+      {{ balanceHint().key | translate: balanceHint().params }}
+    </span>
+
+    @if (showError('points')) {
+      <p id="transaction-points-error" class="admin-form__message" role="alert">
+        {{ 'admin.transactions.form.pointsRequired' | translate }}
+      </p>
+    }
+
+  </div>
+
+  <div class="admin-form__checkbox">
+
+    <input
+      id="transaction-status"
+      type="checkbox"
+      formControlName="status" />
+
+    <label for="transaction-status">
+      {{ 'admin.common.active' | translate }}
+
+      <span class="admin-form__hint">
+        {{ 'admin.transactions.form.activeHint' | translate }}
+      </span>
+    </label>
+
+  </div>
+
+  <div class="admin-form__actions">
+
+    <button
+      type="button"
+      class="admin-btn admin-btn--secondary"
+      [disabled]="saving()"
+      (click)="cancel.emit()">
+      {{ 'admin.common.cancel' | translate }}
+    </button>
+
+    <button
+      type="submit"
+      class="admin-btn admin-btn--primary"
+      [disabled]="saving()">
+
+      @if (saving()) {
+        <span
+          class="material-symbols-rounded admin-spinner"
+          aria-hidden="true">
+          progress_activity
+        </span>
+
+        <span>{{ 'admin.common.saving' | translate }}</span>
+      } @else {
+        <span>{{ submitLabel() || ('admin.common.saveChanges' | translate) }}</span>
+      }
+
+    </button>
+
+  </div>
+
+</form>

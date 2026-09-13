@@ -1,65 +1,110 @@
 <div class="home">
-    <nav class="tabs" aria-label="Home sections">
+
+  <nav class="tabs" [attr.aria-label]="'home.sections' | translate">
+
     <button
-        type="button"
-        class="tab"
-        [class.active]="selectedTab() === 'users'"
-        (click)="selectTab('users')"
-        aria-pressed="{{ selectedTab() === 'users' }}"
-    >
-        Users
+      type="button"
+      class="tab"
+      [class.active]="selectedTab() === 'users'"
+      [attr.aria-pressed]="selectedTab() === 'users'"
+      (click)="selectTab('users')">
+      {{ 'home.users' | translate }}
     </button>
 
     <button
-        type="button"
-        class="tab"
-        [class.active]="selectedTab() === 'adventures'"
-        (click)="selectTab('adventures')"
-        aria-pressed="{{ selectedTab() === 'adventures' }}"
-    >
-        Adventures
+      type="button"
+      class="tab"
+      [class.active]="selectedTab() === 'adventures'"
+      [attr.aria-pressed]="selectedTab() === 'adventures'"
+      (click)="selectTab('adventures')">
+      {{ 'home.adventures' | translate }}
     </button>
-    </nav>
 
-    <div class="content">
+  </nav>
 
-        @if (selectedTab() === 'users') {
-            <section class="section">
+  <div class="content">
 
-                <header class="section-header">
-                <h2 class="section-title">
-                    Top users this season
-                </h2>
+    @if (selectedTab() === 'users') {
 
-                <p class="section-subtitle">
-                    Ranked by points earned
-                </p>
-                </header>
+      <section class="section">
 
-                <app-leaderboard [users]="users()" />
+        <header class="section-header">
+          <h1 class="section-title">{{ 'home.leaderboardTitle' | translate }}</h1>
+          <p class="section-subtitle">{{ 'home.leaderboardSubtitle' | translate }}</p>
+        </header>
 
-            </section>
+        @if (leaderboardFailed()) {
 
+          <div class="state" role="alert">
+            <p>{{ 'home.loadFailed' | translate }}</p>
+            <button type="button" class="retry" (click)="reloadLeaderboard()">
+              {{ 'home.retry' | translate }}
+            </button>
+          </div>
+
+        } @else if (leaderboardLoading() && !seasons().length) {
+
+          <div class="skeleton-list" aria-hidden="true">
+            @for (row of [1, 2, 3, 4, 5]; track row) {
+              <div class="skeleton skeleton--row"></div>
             }
+          </div>
 
-            @if (selectedTab() === 'adventures') {
+        } @else {
 
-            <section class="section">
+          <app-leaderboard
+            [entries]="entries()"
+            [seasons]="seasons()"
+            [selectedSeasonKey]="selectedSeasonKey()"
+            [loading]="leaderboardLoading()"
+            (seasonChange)="selectSeason($event)" />
 
-                <header class="section-header">
-                <h2 class="section-title">
-                    Adventures
-                </h2>
+        }
 
-                <p class="section-subtitle">
-                    Complete adventures and earn rewards
-                </p>
-                </header>
+      </section>
 
-                <app-adventures-list [adventures]="adventures()" />
+    } @else {
 
-            </section>
+      <section class="section">
 
+        <header class="section-header">
+          <h1 class="section-title">{{ 'home.adventures' | translate }}</h1>
+          <p class="section-subtitle">{{ 'home.adventuresSubtitle' | translate }}</p>
+        </header>
+
+        @if (adventuresFailed()) {
+
+          <div class="state" role="alert">
+            <p>{{ 'home.loadFailed' | translate }}</p>
+            <button type="button" class="retry" (click)="reloadAdventures()">
+              {{ 'home.retry' | translate }}
+            </button>
+          </div>
+
+        } @else if (adventuresLoading()) {
+
+          <div class="skeleton-list skeleton-list--cards" aria-hidden="true">
+            @for (card of [1, 2, 3]; track card) {
+              <div class="skeleton skeleton--card"></div>
             }
-    </div>
+          </div>
+
+        } @else if (!adventures().length) {
+
+          <p class="empty">{{ 'home.noAdventures' | translate }}</p>
+
+        } @else {
+
+          <app-adventures-list
+            [adventures]="adventures()"
+            (open)="openAdventure.emit($event)" />
+
+        }
+
+      </section>
+
+    }
+
+  </div>
+
 </div>

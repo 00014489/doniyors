@@ -25,5 +25,8 @@ namespace backend.DTOs
 
         [JsonPropertyName("language_code")]
         public string? LanguageCode { get; set; }
+
+        [JsonPropertyName("photo_url")]
+        public string? PhotoUrl { get; set; }
     }
 }

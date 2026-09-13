@@ -1,76 +1,119 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Telegram.Bot;
-using telegram_bot.DAL;
+using Doniyors.Data;
 using telegram_bot.DAL.Repositories.Sessions;
+using telegram_bot.DAL.Repositories.Transactions;
+using telegram_bot.DAL.Repositories.Travels;
 using telegram_bot.DAL.Repositories.Users;
 using telegram_bot.Handlers;
+using telegram_bot.Infrastructure;
 using telegram_bot.Keyboards;
-using telegram_bot.Midleware;
 using telegram_bot.Models;
 using telegram_bot.Services;
 using telegram_bot.Services.Localization;
+using telegram_bot.Services.QrCode;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 
-builder.Services.Configure<BotSettings>(
-    builder.Configuration.GetSection("BotSettings"));
+// ---------------------------------------------------------------- options
+// ValidateOnStart turns a missing token or webhook secret into a startup
+// failure with a readable message, instead of a bot that silently accepts
+// forged updates or cannot talk to Telegram.
+builder.Services
+    .AddOptions<TelegramOptions>()
+    .Bind(builder.Configuration.GetSection(TelegramOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 
-// Localization
-builder.Services.AddSingleton<ILocalizationService, LocalizationService>();
+builder.Services
+    .AddOptions<WebhookOptions>()
+    .Bind(builder.Configuration.GetSection(WebhookOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
+builder.Services
+    .AddOptions<MiniAppOptions>()
+    .Bind(builder.Configuration.GetSection(MiniAppOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 
 
-// Telegram client
-builder.Services.AddSingleton<ITelegramBotClient>(sp =>
+// ------------------------------------------------------------ web basics
+builder.Services.AddControllers();
+
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+// nginx terminates TLS, so the scheme and client IP arrive in headers.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
-    var settings = sp.GetRequiredService<IOptions<BotSettings>>().Value;
-    return new TelegramBotClient(settings.TELEGRAM_BOT_TOKEN);
+    options.ForwardedHeaders =
+        ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
 });
 
-builder.Services.AddDbContext<BotDbContext>(options =>
+
+// ------------------------------------------------------------- Telegram
+builder.Services.AddSingleton<ITelegramBotClient>(sp =>
+{
+    var options = sp.GetRequiredService<IOptions<TelegramOptions>>().Value;
+
+    return new TelegramBotClient(options.BotToken);
+});
+
+builder.Services.AddHostedService<WebhookRegistration>();
+
+
+// ------------------------------------------------------------- database
+builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddScoped<ISessionRepo, SessionRepo>();
 
+// --------------------------------------------------- dependency injection
+// Injected rather than calling DateTimeOffset.UtcNow directly, so the
+// provisioning timestamps are testable — the API registers the same.
+builder.Services.AddSingleton(TimeProvider.System);
+
+builder.Services.AddSingleton<ILocalizationService, LocalizationService>();
+builder.Services.AddSingleton<IQrCodeReader, QrCodeReader>();
+builder.Services.AddSingleton<MiniAppMenuButton>();
+
+builder.Services.AddScoped<ISessionRepo, SessionRepo>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ITravelRepository, TravelRepository>();
+builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
+
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<SessionService>();
-
+builder.Services.AddScoped<QrScanService>();
 
 builder.Services.AddScoped<UpdateHandler>();
 builder.Services.AddScoped<MessageHandler>();
 builder.Services.AddScoped<CommandHandler>();
 builder.Services.AddScoped<CallbackQueryHandler>();
+builder.Services.AddScoped<QrScanHandler>();
 
 builder.Services.AddScoped<ReplyKeyboards>();
 builder.Services.AddScoped<InlineKeyboards>();
 
 
-
-builder.Services.AddControllers();
-
-
 var app = builder.Build();
 
 
-using (var scope = app.Services.CreateScope())
-{
-    var settings = scope.ServiceProvider.GetRequiredService<IOptions<BotSettings>>().Value;
-    var botClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
-    await botClient.SetWebhook(settings.WEBHOOK_BASE_URL);
-}
+// ------------------------------------------------------------- pipeline
+app.UseForwardedHeaders();
 
-app.UseMiddleware<ErrorHandlingMiddleware>();
+app.UseExceptionHandler();
+
+// No HTTPS redirection: nginx terminates TLS and Kestrel listens on plain
+// HTTP inside the compose network. Redirecting would bounce Telegram to a
+// port nothing is listening on.
+
 app.MapControllers();
 
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHttpsRedirection();
-}
-
-
 app.Run();
-

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using backend.DAL.Entities;
+using Doniyors.Data.Entities;
 
 namespace backend.Services.JwtService
 {

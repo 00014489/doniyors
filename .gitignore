@@ -72,13 +72,15 @@ frontend/.cache/
 **/node_modules/
 **/.angular/
 **/dist/
+**/out-tsc/
+.sass-cache/
 
 #####################################################
 # Angular Environment Files
 #####################################################
 
-frontend/src/environments/environment.local.ts
-frontend/src/environments/environment.production.local.ts
+frontend/src/app/environments/environment.local.ts
+frontend/src/app/environments/environment.production.local.ts
 
 #####################################################
 # Docker

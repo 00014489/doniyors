@@ -1,0 +1,50 @@
+@use '../../pages/desktop/admin' as admin;
+
+:host {
+  display: block;
+}
+
+/*
+  The sidebar and the routed content sit side by side.
+  Without this rule `.layout` stays a block container, the full-height
+  sidebar takes the first row and every routed page renders below the fold.
+*/
+.layout {
+  display: flex;
+  align-items: stretch;
+
+  min-height: 100dvh;
+
+  background: admin.$bg;
+}
+
+app-desk-nav {
+  flex: 0 0 auto;
+
+  /* Keeps the sidebar in view while the routed page scrolls. */
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+}
+
+/*
+  The routed page owns its own spacing; the content column only has to take
+  the remaining width and let wide children (tables) shrink instead of
+  stretching the layout.
+*/
+.layout__content {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Narrow viewports: stack the navigation above the content. */
+@media (max-width: 768px) {
+  .layout {
+    flex-direction: column;
+  }
+
+  app-desk-nav {
+    position: static;
+    align-self: stretch;
+  }
+}

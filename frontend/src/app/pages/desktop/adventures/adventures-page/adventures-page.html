@@ -1,194 +1,236 @@
-<section class="adventures">
-  <header class="adventures__header">
+<section class="admin-page">
+  <header class="admin-page-header">
     <div>
-      <p class="adventures__eyebrow">Management</p>
+      <p class="admin-eyebrow">{{ 'admin.common.management' | translate }}</p>
 
-      <h1>Adventures</h1>
+      <h1>{{ 'admin.adventures.title' | translate }}</h1>
 
-      <p class="adventures__description">
-        Manage available adventures and travel experiences.
+      <p class="admin-page-header__description">
+        {{ 'admin.adventures.description' | translate }}
       </p>
     </div>
 
-    <button
-      type="button"
-      class="adventures__refresh"
-      [disabled]="isLoading()"
-      (click)="reload()">
+    <a class="admin-btn admin-btn--primary" routerLink="/adventures/new">
+      <span class="material-symbols-rounded" aria-hidden="true"> add </span>
 
-      <span class="material-symbols-rounded" aria-hidden="true">
-        refresh
-      </span>
-
-      <span>Refresh</span>
-    </button>
+      <span>{{ 'admin.adventures.add' | translate }}</span>
+    </a>
   </header>
 
-  @if (isLoading()) {
-    <div
-      class="adventures__state"
-      role="status"
-      aria-live="polite">
+  @if (deleteError(); as error) {
+    <div class="admin-banner admin-page__banner" role="alert">
+      <span class="material-symbols-rounded" aria-hidden="true"> error </span>
 
-      <span
-        class="material-symbols-rounded adventures__spinner"
-        aria-hidden="true">
+      <div>
+        <strong>{{ 'admin.common.somethingWrong' | translate }}</strong>
+        <p>{{ error.key | translate: error.params }}</p>
+      </div>
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="admin-state" role="status" aria-live="polite">
+      <span class="material-symbols-rounded admin-spinner" aria-hidden="true">
         progress_activity
       </span>
 
-      <p>Loading adventures...</p>
+      <p>{{ 'admin.adventures.loading' | translate }}</p>
     </div>
   }
 
   @if (errorMessage(); as error) {
-    <div
-      class="adventures__error"
-      role="alert">
-
-      <span
-        class="material-symbols-rounded"
-        aria-hidden="true">
-        error
-      </span>
+    <div class="admin-banner admin-page__banner" role="alert">
+      <span class="material-symbols-rounded" aria-hidden="true"> error </span>
 
       <div>
-        <strong>Something went wrong</strong>
-        <p>{{ error }}</p>
+        <strong>{{ 'admin.common.somethingWrong' | translate }}</strong>
+        <p>{{ error | translate }}</p>
       </div>
 
-      <button
-        type="button"
-        (click)="reload()">
-        Try again
+      <button type="button" class="admin-btn" (click)="reload()">
+        {{ 'admin.common.tryAgain' | translate }}
       </button>
     </div>
   }
 
   @if (!isLoading() && !errorMessage()) {
+    @if (adventures().length === 0) {
+      <div class="admin-state" role="status">
+        <span class="material-symbols-rounded admin-state__icon" aria-hidden="true"> hiking </span>
 
-  @if (adventures().length === 0) {
+        <h2>{{ 'admin.common.noData' | translate }}</h2>
 
-    <div class="adventures__empty" role="status">
-      <span
-        class="material-symbols-rounded"
-        aria-hidden="true">
-        hiking
-      </span>
+        <p>
+          {{ 'admin.adventures.empty' | translate }}
+        </p>
 
-      <h2>No data</h2>
+        <a class="admin-btn admin-btn--primary admin-state__action" routerLink="/adventures/new">
+          <span class="material-symbols-rounded" aria-hidden="true"> add </span>
 
-      <p>
-        There are no adventures available yet.
-      </p>
-    </div>
+          <span>{{ 'admin.adventures.add' | translate }}</span>
+        </a>
+      </div>
+    } @else {
+      <div class="admin-table-wrapper">
+        <table class="admin-table adventures__table">
+          <caption class="sr-only">
+            {{
+              'admin.adventures.tableCaption' | translate
+            }}
+          </caption>
 
-  } @else {
-
-    <div class="adventures__table-wrapper">
-      <table class="adventures__table">
-
-        <caption class="sr-only">
-          List of available adventures
-        </caption>
-
-        <thead>
-          <tr>
-            <th scope="col">ID</th>
-            <th scope="col">Adventure</th>
-            <th scope="col">Travel date</th>
-            <th scope="col">Cost</th>
-            <th scope="col">Points</th>
-            <th scope="col">Created</th>
-            <th scope="col">
-              <span class="sr-only">Actions</span>
-            </th>
-          </tr>
-        </thead>
-
-        <tbody>
-          @for (adventure of adventures(); track adventure.id) {
-
+          <thead>
             <tr>
-              <td>
-                <span class="adventures__id">
-                  #{{ adventure.id }}
-                </span>
-              </td>
-
-              <td>
-                <div class="adventures__title">
-                  <span
-                    class="material-symbols-rounded"
-                    aria-hidden="true">
-                    hiking
-                  </span>
-
-                  <strong>
-                    {{ adventure.title }}
-                  </strong>
-                </div>
-              </td>
-
-              <td>
-                <div class="adventures__date">
-                  <span
-                    class="material-symbols-rounded"
-                    aria-hidden="true">
-                    calendar_month
-                  </span>
-
-                  <span>
-                    {{ adventure.travelDate | date:'dd MMM yyyy, HH:mm' }}
-                  </span>
-                </div>
-              </td>
-
-              <td>
-                <strong>
-                  {{ adventure.cost }}
-                </strong>
-              </td>
-
-              <td>
-                <span class="adventures__points">
-                  <span
-                    class="material-symbols-rounded"
-                    aria-hidden="true">
-                    stars
-                  </span>
-
-                  {{ adventure.points }}
-                </span>
-              </td>
-
-              <td>
-                {{ adventure.createdAt | date:'dd MMM yyyy' }}
-              </td>
-
-              <td>
-                <button
-                  type="button"
-                  class="adventures__action"
-                  [attr.aria-label]="'Open ' + adventure.title"
-                  title="Open adventure">
-
-                  <span
-                    class="material-symbols-rounded"
-                    aria-hidden="true">
-                    more_vert
-                  </span>
-
-                </button>
-              </td>
+              <th scope="col">{{ 'admin.common.id' | translate }}</th>
+              <th scope="col">{{ 'admin.adventures.colAdventure' | translate }}</th>
+              <th scope="col">{{ 'admin.adventures.colTravelDate' | translate }}</th>
+              <th scope="col">{{ 'admin.adventures.colCost' | translate }}</th>
+              <th scope="col">{{ 'admin.common.points' | translate }}</th>
+              <th scope="col">{{ 'admin.common.status' | translate }}</th>
+              <th scope="col">{{ 'admin.common.created' | translate }}</th>
+              <th scope="col">
+                <span class="sr-only">{{ 'admin.common.actions' | translate }}</span>
+              </th>
             </tr>
+          </thead>
 
-          }
-        </tbody>
+          <tbody>
+            @for (adventure of adventures(); track adventure.id) {
+              <tr>
+                <td>
+                  <span class="admin-table__id"> #{{ adventure.id }} </span>
+                </td>
 
-      </table>
-    </div>
+                <td>
+                  <div class="admin-cell">
+                    @if (adventure.images[0]; as cover) {
+                      <img
+                        class="adventures__cover"
+                        [src]="imageUrl(cover.id)"
+                        [alt]="'admin.adventures.coverAlt' | translate: { title: adventure.title }"
+                        loading="lazy"
+                      />
+                    } @else {
+                      <span class="adventures__cover adventures__cover--empty" aria-hidden="true">
+                        <span class="material-symbols-rounded"> hiking </span>
+                      </span>
+                    }
 
+                    <strong>
+                      {{ adventure.title }}
+                    </strong>
+                  </div>
+                </td>
+
+                <td>
+                  <div class="admin-cell admin-cell--muted">
+                    <span class="material-symbols-rounded" aria-hidden="true">
+                      calendar_month
+                    </span>
+
+                    <span>
+                      {{ adventure.travelDate | localDate: 'dd MMM yyyy, HH:mm' }}
+                    </span>
+                  </div>
+                </td>
+
+                <td>
+                  <strong>
+                    {{ adventure.cost | money }}
+                  </strong>
+                </td>
+
+                <td>
+                  <span class="admin-cell--points">
+                    <span class="material-symbols-rounded" aria-hidden="true"> stars </span>
+
+                    {{ adventure.points }}
+                  </span>
+                </td>
+
+                <td>
+                  <span
+                    class="admin-status"
+                    [class.is-active]="adventure.status"
+                    [class.is-disabled]="!adventure.status"
+                  >
+                    {{
+                      (adventure.status ? 'admin.common.active' : 'admin.common.disabled')
+                        | translate
+                    }}
+                  </span>
+                </td>
+
+                <td>
+                  {{ adventure.createdAt | localDate: 'dd MMM yyyy' }}
+                </td>
+
+                <td>
+                  <div class="admin-row-actions">
+                    <a
+                      class="admin-icon-btn"
+                      [routerLink]="['/adventures', adventure.id]"
+                      [attr.aria-label]="
+                        'admin.common.viewDetailsOf' | translate: { name: adventure.title }
+                      "
+                      [attr.title]="
+                        'admin.common.viewDetailsOf' | translate: { name: adventure.title }
+                      "
+                    >
+                      <span class="material-symbols-rounded" aria-hidden="true"> visibility </span>
+                    </a>
+
+                    <a
+                      class="admin-icon-btn"
+                      [routerLink]="['/adventures', adventure.id, 'edit']"
+                      [attr.aria-label]="
+                        'admin.common.editItem' | translate: { name: adventure.title }
+                      "
+                      [attr.title]="'admin.common.editItem' | translate: { name: adventure.title }"
+                    >
+                      <span class="material-symbols-rounded" aria-hidden="true"> edit </span>
+                    </a>
+
+                    <button
+                      type="button"
+                      class="admin-icon-btn admin-icon-btn--danger"
+                      [disabled]="!adventure.status"
+                      [attr.aria-label]="
+                        (adventure.status
+                          ? 'admin.common.deleteItem'
+                          : 'admin.common.itemAlreadyDisabled'
+                        ) | translate: { name: adventure.title }
+                      "
+                      [attr.title]="
+                        adventure.status
+                          ? ('admin.common.deleteItem' | translate: { name: adventure.title })
+                          : ('admin.common.alreadyDisabled' | translate)
+                      "
+                      (click)="askDelete(adventure)"
+                    >
+                      <span class="material-symbols-rounded" aria-hidden="true"> delete </span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
   }
 
-}
+  <app-confirm-dialog
+    [open]="confirmOpen()"
+    [heading]="'admin.adventures.deleteHeading' | translate"
+    [message]="
+      'admin.adventures.deleteMessage'
+        | translate: { title: pendingDelete()?.title }
+    "
+    [confirmLabel]="'admin.common.yes' | translate"
+    [cancelLabel]="'admin.common.cancel' | translate"
+    [busy]="isDeleting()"
+    (confirmed)="confirmDelete()"
+    (cancelled)="cancelDelete()"
+  />
 </section>

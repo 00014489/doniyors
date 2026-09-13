@@ -1,4 +1,6 @@
-FROM node:22-alpine AS build
+# Angular 22 needs Node ^22.22.3 or ^24.15.0; Node 24 also ships the npm 11
+# named in package.json's "packageManager".
+FROM node:24-alpine AS build
 
 WORKDIR /app
 
@@ -10,7 +12,7 @@ COPY . .
 
 RUN npm run build -- --configuration production
 
-FROM nginx:1.28-alpine
+FROM nginx:1.30-alpine
 
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 

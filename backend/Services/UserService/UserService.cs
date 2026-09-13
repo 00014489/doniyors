@@ -1,87 +1,97 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using backend.DAL.Repositories.UserRepo;
 using backend.DTOs;
+using backend.DTOs.Member;
+using backend.Services.Common;
+using backend.Services.TelegramMenuButton;
+using Doniyors.Data;
 
 namespace backend.Services.UserService
 {
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
+        private readonly ITelegramMenuButton _menuButton;
 
-        public UserService(IUserRepository userRepository)
+        public UserService(IUserRepository userRepository, ITelegramMenuButton menuButton)
         {
             _userRepository = userRepository;
+            _menuButton = menuButton;
         }
 
-        public async Task<QRCodeDto?> GetQrCodeAsync(int userId)
+        public Task<QRCodeDto?> GetQrCodeAsync(
+            int userId,
+            CancellationToken cancellationToken = default)
         {
-            var user = await _userRepository.GetByIdAsync(userId);
-
-            if (user is null)
-            {
-                return null;
-            }
-
-            return new QRCodeDto
-            {
-                QrToken = user.QrToken,
-                Points = user.Points
-            };
+            // Projected in the query: the QR endpoint needs two columns, not a row.
+            return _userRepository.GetQrTokenByIdAsync(userId, cancellationToken);
         }
-        public async Task<List<UserTransactionDto>> GetUserTransactionsAsync(
-            long tgUserId, int userId)
+
+        public async Task<IReadOnlyList<UserTransactionDto>?> GetUserTransactionsAsync(
+            long tgUserId,
+            int userId,
+            CancellationToken cancellationToken = default)
         {
-            var currentUser = await _userRepository.GetByIdAsync(userId);
+            var currentUser = await _userRepository.GetByIdAsync(userId, cancellationToken);
 
             if (currentUser is null)
-                throw new Exception("User not found.");
+                return null;
 
+            // Your own history in full; someone else's only for the running season.
             if (currentUser.TgUserId == tgUserId)
             {
-                return await _userRepository.GetUserAllTransactionsAsync(tgUserId);
+                return await _userRepository.GetUserAllTransactionsAsync(
+                    tgUserId,
+                    cancellationToken);
             }
 
-            var from = GetSeasonStart();
-            var to = GetSeasonEnd();
+            var season = Season.Of(DateTimeOffset.UtcNow);
 
             return await _userRepository.GetUserTransactionsAsync(
                 tgUserId,
-                from,
-                to);
+                season.Start,
+                season.End,
+                cancellationToken);
         }
-        private static DateTime GetSeasonStart()
+
+        public async Task<string?> GetLanguageAsync(
+            int userId,
+            CancellationToken cancellationToken = default)
         {
-            var now = DateTime.UtcNow;
-            var year = now.Year;
+            var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
 
-            return now.Month switch
-            {
-                >= 3 and <= 5 => new DateTime(year, 3, 1),   // Spring
-                >= 6 and <= 8 => new DateTime(year, 6, 1),   // Summer
-                >= 9 and <= 11 => new DateTime(year, 9, 1),  // Autumn
-                _ => new DateTime(now.Month == 12 ? year : year - 1, 12, 1) // Winter
-            };
+            return user?.LanguageCode;
         }
 
-        private static DateTime GetSeasonEnd()
+        public async Task<SaveResult<LanguageDto>> SetLanguageAsync(
+            int userId,
+            string? languageCode,
+            CancellationToken cancellationToken = default)
         {
-            var now = DateTime.UtcNow;
-            var year = now.Year;
-
-            return now.Month switch
+            // A member picks a language; clearing it back to "not chosen" is not
+            // something they do, so the empty string is refused here too.
+            if (!SupportedLanguages.IsSupported(languageCode))
             {
-                >= 3 and <= 5 => new DateTime(year, 5, 31, 23, 59, 59),
-                >= 6 and <= 8 => new DateTime(year, 8, 31, 23, 59, 59),
-                >= 9 and <= 11 => new DateTime(year, 11, 30, 23, 59, 59),
-                _ => new DateTime(now.Month == 12 ? year + 1 : year, 2,
-                        DateTime.IsLeapYear(now.Month == 12 ? year + 1 : year) ? 29 : 28,
-                        23, 59, 59)
-            };
+                return SaveResult<LanguageDto>.Conflict(
+                    ErrorCodes.UnsupportedLanguage,
+                    "This language is not supported.");
+            }
+
+            var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
+
+            if (user is null)
+                return SaveResult<LanguageDto>.NotFound("User not found.");
+
+            if (user.LanguageCode != languageCode)
+            {
+                user.LanguageCode = languageCode!;
+                user.UpdatedAt = DateTimeOffset.UtcNow;
+
+                await _userRepository.SaveAsync(cancellationToken);
+
+                await _menuButton.UpdateAsync(user.TgUserId, user.LanguageCode, cancellationToken);
+            }
+
+            return SaveResult<LanguageDto>.Success(new LanguageDto { LanguageCode = user.LanguageCode });
         }
-        
-        
     }
 }

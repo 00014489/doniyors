@@ -1,12 +1,17 @@
 import { HttpClient } from '@angular/common/http';
-import { computed, inject, Injectable, signal } from '@angular/core';
-import { TelegramService } from './telegram-service';
+import { computed, inject, Service, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { LanguageService } from './language-service';
+
 import { environment } from '../../environments/environment';
+import { AppLanguage, LanguageService } from './language-service';
+import { TelegramService } from './telegram-service';
 
 interface LoginResponse {
   token: string;
+  languageCode: string;
+}
+
+interface LanguageResponse {
   languageCode: string;
 }
 
@@ -16,40 +21,107 @@ interface JwtPayload {
   exp: number;
 }
 
-@Injectable({
-  providedIn: 'root',
-})
+const TOKEN_KEY = 'jwt';
+
+@Service()
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly telegram = inject(TelegramService);
   private readonly languageService = inject(LanguageService);
 
-  private readonly api = `${environment.apiUrl}/auth/telegram`;
+  private readonly loginUrl = `${environment.apiUrl}/auth/telegram`;
+  private readonly languageUrl = `${environment.apiUrl}/profile/language`;
 
   readonly authenticated = signal(false);
   readonly userId = signal<number | null>(null);
   readonly typeUser = signal<number | null>(null);
 
-  readonly isAdmin = computed(() => this.typeUser() === 1);
+  /** TypeUser 1 = SuperAdmin, 2 = Admin — both may use the admin panel. */
+  readonly isAdmin = computed(() => {
+    const type = this.typeUser();
 
+    return type === 1 || type === 2;
+  });
+
+  /** The sign-in in flight, shared by every caller that needs a token at once. */
+  private signingIn: Promise<string> | null = null;
+
+  private watchingForeground = false;
+
+  /**
+   * Signs in on start-up. This always asks the API, even with a token left in
+   * session storage: the answer carries the member's stored language, and a
+   * copy kept from earlier may be stale — the bot's language menu or the admin
+   * panel can have changed it since.
+   */
   async initialize(): Promise<void> {
-    const storedToken = sessionStorage.getItem('jwt');
+    // Until the API answers, the Telegram client's locale is the only hint.
+    this.languageService.useClientHint(this.telegram.user()?.language_code);
 
-    if (storedToken && this.isTokenValid(storedToken)) {
-      this.readClaims(storedToken);
+    await this.refresh();
 
-      this.languageService.setLanguage(sessionStorage.getItem('languageCode') ?? 'en');
+    this.watchForeground();
+  }
 
-      this.authenticated.set(true);
+  /**
+   * Signs in again with Telegram's initData and resolves with the new token.
+   * The token lives an hour but initData stays valid for a day, so the
+   * interceptor uses this to recover a Mini App left open past the hour.
+   */
+  refresh(): Promise<string> {
+    this.signingIn ??= this.signIn().finally(() => {
+      this.signingIn = null;
+    });
 
+    return this.signingIn;
+  }
+
+  /** The sign-in call itself must never trigger a sign-in. */
+  isSignInRequest(url: string): boolean {
+    return url === this.loginUrl;
+  }
+
+  /** Re-reads the stored language, for when the app comes back into view. */
+  async syncLanguage(): Promise<void> {
+    if (!this.authenticated()) {
       return;
     }
 
-    if (storedToken) {
-      // Stale/expired token — clear it before re-authenticating.
-      this.clearSession();
-    }
+    try {
+      const response = await firstValueFrom(
+        this.http.get<LanguageResponse>(this.languageUrl),
+      );
 
+      this.languageService.setLanguage(response.languageCode);
+    } catch {
+      // Keep what is on screen; the next return to the app tries again.
+    }
+  }
+
+  /**
+   * The member's own choice. Saved before it is shown, so the screen never
+   * displays a language the database does not hold. The API relabels the bot's
+   * menu button too, and the bot reads the same column.
+   */
+  async changeLanguage(language: AppLanguage): Promise<void> {
+    const response = await firstValueFrom(
+      this.http.put<LanguageResponse>(this.languageUrl, { languageCode: language }),
+    );
+
+    this.languageService.setLanguage(response.languageCode);
+  }
+
+  logout(): void {
+    this.clearSession();
+
+    this.authenticated.set(false);
+  }
+
+  get token(): string | null {
+    return sessionStorage.getItem(TOKEN_KEY);
+  }
+
+  private async signIn(): Promise<string> {
     const initData = this.telegram.initData();
 
     if (!initData) {
@@ -57,53 +129,47 @@ export class AuthService {
     }
 
     const response = await firstValueFrom(
-      this.http.post<LoginResponse>(this.api, { initData }),
+      this.http.post<LoginResponse>(this.loginUrl, { initData }),
     );
 
-    sessionStorage.setItem('jwt', response.token);
-    sessionStorage.setItem('languageCode', response.languageCode);
+    sessionStorage.setItem(TOKEN_KEY, response.token);
 
     this.readClaims(response.token);
 
     this.languageService.setLanguage(response.languageCode);
 
     this.authenticated.set(true);
+
+    return response.token;
   }
 
-  logout(): void {
-    this.clearSession();
+  /**
+   * A member can change their language in the bot while the Mini App waits in
+   * the background, so the stored value is read again whenever it returns.
+   */
+  private watchForeground(): void {
+    if (this.watchingForeground) {
+      return;
+    }
 
-    this.authenticated.set(false);
+    this.watchingForeground = true;
 
-    this.languageService.setLanguage('en');
-  }
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        void this.syncLanguage();
+      }
+    });
 
-  get token(): string | null {
-    return sessionStorage.getItem('jwt');
-  }
-
-  get languageCode(): string {
-    return this.languageService.language();
+    // Telegram's own signal: a minimised Mini App does not always fire
+    // visibilitychange when it is restored.
+    this.telegram.onActivated(() => void this.syncLanguage());
   }
 
   private clearSession(): void {
-    sessionStorage.removeItem('jwt');
-    sessionStorage.removeItem('languageCode');
+    sessionStorage.removeItem(TOKEN_KEY);
 
     this.userId.set(null);
     this.typeUser.set(null);
-  }
-
-  /** Pure check — no side effects. Caller decides what to do with an invalid token. */
-  private isTokenValid(token: string): boolean {
-    try {
-      const payload = this.decodeToken(token);
-      const now = Math.floor(Date.now() / 1000);
-
-      return payload.exp > now;
-    } catch {
-      return false;
-    }
   }
 
   private readClaims(token: string): void {

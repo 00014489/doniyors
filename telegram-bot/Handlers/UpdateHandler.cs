@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Telegram.Bot.Types;
 
 namespace telegram_bot.Handlers
@@ -10,20 +6,35 @@ namespace telegram_bot.Handlers
     {
         private readonly MessageHandler _messageHandler;
         private readonly CallbackQueryHandler _callbackQueryHandler;
-        public UpdateHandler(MessageHandler messageHandler, CallbackQueryHandler callbackQueryHandler)
+        private readonly ILogger<UpdateHandler> _logger;
+
+        public UpdateHandler(
+            MessageHandler messageHandler,
+            CallbackQueryHandler callbackQueryHandler,
+            ILogger<UpdateHandler> logger)
         {
             _messageHandler = messageHandler;
             _callbackQueryHandler = callbackQueryHandler;
+            _logger = logger;
         }
-        public async Task HandleAsync(Update update)
+
+        public async Task HandleAsync(Update update, CancellationToken cancellationToken = default)
         {
-            if (update.Message != null)
+            switch (update)
             {
-                await _messageHandler.HandleAsync(update.Message);
-            }
-            else if (update.CallbackQuery != null)
-            {
-                await _callbackQueryHandler.HandleAsync(update.CallbackQuery);
+                case { Message: not null }:
+                    await _messageHandler.HandleAsync(update.Message, cancellationToken);
+                    break;
+
+                case { CallbackQuery: not null }:
+                    await _callbackQueryHandler.HandleAsync(update.CallbackQuery, cancellationToken);
+                    break;
+
+                default:
+                    // Only Message and CallbackQuery are subscribed to, so this
+                    // means the webhook's allowed-updates list drifted.
+                    _logger.LogDebug("Ignored update {UpdateId} of type {Type}.", update.Id, update.Type);
+                    break;
             }
         }
     }

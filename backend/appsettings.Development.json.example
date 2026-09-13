@@ -1,0 +1,20 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=localhost;Port=5432;Database=MainDb;Username=postgres;Password=CHANGE_ME"
+  },
+  "Telegram": {
+    "BotToken": "CHANGE_ME"
+  },
+  "Jwt": {
+    "Issuer": "MiniApp",
+    "Audience": "MiniApp",
+    "Key": "CHANGE_ME-at-least-32-characters-long-random-secret",
+    "ExpiresMinutes": 60
+  }
+}

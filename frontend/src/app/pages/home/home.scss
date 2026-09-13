@@ -90,3 +90,102 @@
   font-size: 14px;
   line-height: 1.4;
 }
+/* ---- Loading, empty and error states ---------------------------------- */
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+
+  padding: 32px 18px;
+
+  text-align: center;
+}
+
+.state p {
+  margin: 0;
+
+  color: var(--app-text-secondary);
+  font-size: 15px;
+}
+
+.retry {
+  padding: 8px 18px;
+
+  border-radius: 999px;
+
+  border: 1px solid var(--app-primary);
+  background: color-mix(in srgb, var(--app-primary) 14%, transparent);
+
+  /* Body text, not the theme's link colour, which misses 4.5:1 on this tint. */
+  color: var(--app-text);
+
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.empty {
+  margin: 0;
+  padding: 32px 18px;
+
+  color: var(--app-text-secondary);
+
+  font-size: 15px;
+  text-align: center;
+}
+
+.skeleton-list {
+  display: flex;
+  flex-direction: column;
+
+  margin: 0 18px;
+
+  background: var(--app-surface);
+
+  border-radius: var(--app-radius);
+
+  overflow: hidden;
+}
+
+.skeleton-list--cards {
+  gap: 12px;
+
+  background: none;
+}
+
+.skeleton {
+  background: var(--app-surface-2);
+
+  /* A quiet pulse, not a sweep — the list is short enough that a travelling
+     highlight would draw more attention than the content. */
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.skeleton--row {
+  height: 68px;
+
+  border-bottom: 1px solid var(--app-border);
+}
+
+.skeleton--row:last-child {
+  border-bottom: none;
+}
+
+.skeleton--card {
+  height: 108px;
+
+  border-radius: var(--app-radius);
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .55; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}

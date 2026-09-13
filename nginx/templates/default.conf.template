@@ -1,0 +1,74 @@
+# Rendered to /etc/nginx/conf.d/default.conf when the container starts.
+# ${DOMAIN} comes from the environment; nginx's own variables are left alone.
+
+# Read by the API and the bot through UseForwardedHeaders.
+proxy_set_header Host              $host;
+proxy_set_header X-Forwarded-Proto $scheme;
+proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+proxy_set_header X-Real-IP         $remote_addr;
+
+
+server {
+    listen 80 default_server;
+    server_name _;
+
+    # Let's Encrypt's HTTP-01 challenge. Must stay reachable over plain HTTP,
+    # including for renewals.
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://${DOMAIN}$request_uri;
+    }
+}
+
+
+server {
+    listen 443 ssl default_server;
+    http2 on;
+
+    server_name ${DOMAIN};
+
+    # A symlink to the Let's Encrypt certificate — or, until it has been
+    # issued, to a temporary self-signed one. Kept current by
+    # /docker-entrypoint.d/40-certificates.sh.
+    ssl_certificate     /etc/nginx/ssl/active/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/active/privkey.pem;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_session_timeout 1d;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_tickets off;
+
+    add_header Strict-Transport-Security "max-age=31536000" always;
+
+    # Five images of up to 5 MB per adventure, plus form overhead.
+    client_max_body_size 50M;
+
+    # Variables make nginx resolve each container per request (see resolver in
+    # nginx.conf). With a variable and no URI part, proxy_pass forwards the
+    # request URI unchanged — so "/api/auth/telegram" keeps its "/api" prefix,
+    # which the API's routes include.
+    set $frontend_upstream http://frontend:80;
+    set $backend_upstream  http://backend:8080;
+    set $bot_upstream      http://telegram-bot:8081;
+
+    # Angular
+    location / {
+        proxy_pass $frontend_upstream;
+    }
+
+    # ASP.NET API
+    location /api/ {
+        proxy_pass $backend_upstream;
+    }
+
+    # Telegram webhook. The X-Telegram-Bot-Api-Secret-Token header passes
+    # through and is verified by the bot. A photo of many QR codes can take a
+    # few seconds to process.
+    location = /webhook {
+        proxy_pass $bot_upstream;
+        proxy_read_timeout 120s;
+    }
+}
